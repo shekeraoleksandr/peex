@@ -1,0 +1,138 @@
+### TRIGGERED ALERT PROOF (stress) @ 2026-09-20 16:39:42 UTC
+
+$ curl -s localhost:9090/api/v1/alerts   # what Prometheus considers firing
+{
+    "status": "success",
+    "data": {
+        "alerts": [
+            {
+                "labels": {
+                    "alertname": "HostDiskFilling",
+                    "category": "infrastructure",
+                    "device": "/dev/root",
+                    "fstype": "ext4",
+                    "instance": "node-exporter:9100",
+                    "instance_role": "monitoring",
+                    "job": "node-monitoring",
+                    "mountpoint": "/",
+                    "severity": "warning"
+                },
+                "annotations": {
+                    "description": "Prometheus TSDB growth is the usual cause on this box.",
+                    "runbook": "docs/runbook.md#hostdiskfilling",
+                    "summary": "Root filesystem on node-exporter:9100 above 85%"
+                },
+                "state": "pending",
+                "activeAt": "2026-09-20T16:36:30.990416485Z",
+                "value": "9.491212866642329e-01"
+            },
+            {
+                "labels": {
+                    "alertname": "EndpointDown",
+                    "category": "application",
+                    "instance": "http://10.42.1.10/",
+                    "job": "blackbox-http",
+                    "severity": "critical"
+                },
+                "annotations": {
+                    "description": "blackbox_exporter could not get a 2xx for 2 minutes.",
+                    "runbook": "docs/runbook.md#endpointdown",
+                    "summary": "Endpoint http://10.42.1.10/ is failing its HTTP probe"
+                },
+                "state": "firing",
+                "activeAt": "2026-09-20T16:36:36.668894211Z",
+                "value": "0e+00"
+            },
+            {
+                "labels": {
+                    "alertname": "EndpointSlow",
+                    "category": "application",
+                    "instance": "http://10.42.1.10/",
+                    "job": "blackbox-http",
+                    "severity": "warning"
+                },
+                "annotations": {
+                    "description": "Probe latency 5.00s exceeds the 2s objective.",
+                    "runbook": "docs/runbook.md#endpointslow",
+                    "summary": "Endpoint http://10.42.1.10/ is slow"
+                },
+                "state": "firing",
+                "activeAt": "2026-09-20T16:36:36.668894211Z",
+                "value": "5.004364361e+00"
+            }
+        ]
+    }
+}
+
+$ curl -s localhost:9093/api/v2/alerts   # what Alertmanager received
+[
+    {
+        "annotations": {
+            "description": "Probe latency 5.00s exceeds the 2s objective.",
+            "runbook": "docs/runbook.md#endpointslow",
+            "summary": "Endpoint http://10.42.1.10/ is slow"
+        },
+        "endsAt": "2026-09-20T16:43:36.668Z",
+        "fingerprint": "4460c12cab82fa56",
+        "receivers": [
+            {
+                "name": "webhook"
+            }
+        ],
+        "startsAt": "2026-09-20T16:39:36.668Z",
+        "status": {
+            "inhibitedBy": [],
+            "silencedBy": [],
+            "state": "active"
+        },
+        "updatedAt": "2026-09-20T16:39:36.673Z",
+        "generatorURL": "http://2bbae9fca677:9090/graph?g0.expr=probe_duration_seconds+%3E+2&g0.tab=1",
+        "labels": {
+            "alertname": "EndpointSlow",
+            "category": "application",
+            "environment": "aws-ec2",
+            "instance": "http://10.42.1.10/",
+            "job": "blackbox-http",
+            "severity": "warning",
+            "stack": "peex-containers"
+        }
+    },
+    {
+        "annotations": {
+            "description": "blackbox_exporter could not get a 2xx for 2 minutes.",
+            "runbook": "docs/runbook.md#endpointdown",
+            "summary": "Endpoint http://10.42.1.10/ is failing its HTTP probe"
+        },
+        "endsAt": "2026-09-20T16:42:36.668Z",
+        "fingerprint": "f00673874770a934",
+        "receivers": [
+            {
+                "name": "webhook"
+            }
+        ],
+        "startsAt": "2026-09-20T16:38:36.668Z",
+        "status": {
+            "inhibitedBy": [],
+            "silencedBy": [],
+            "state": "active"
+        },
+        "updatedAt": "2026-09-20T16:38:36.733Z",
+        "generatorURL": "http://2bbae9fca677:9090/graph?g0.expr=probe_success+%3D%3D+0&g0.tab=1",
+        "labels": {
+            "alertname": "EndpointDown",
+            "category": "application",
+            "environment": "aws-ec2",
+            "instance": "http://10.42.1.10/",
+            "job": "blackbox-http",
+            "severity": "critical",
+            "stack": "peex-containers"
+        }
+    }
+]
+
+$ curl -s localhost:5001/alerts   # what the automated process recorded
+{"ts": "2026-09-20T16:38:41Z", "event": "alert_received", "status": "firing", "alertname": "EndpointDown", "severity": "critical", "container": "http://10.42.1.10/", "summary": "Endpoint http://10.42.1.10/ is failing its HTTP probe", "runbook": "docs/runbook.md#endpointdown", "action_taken": "recorded to /data/alerts.log"}
+
+$ sudo docker logs --tail 20 peex_webhook_sink   # the triggered action
+{"ts": "2026-09-20T16:36:15Z", "event": "listening", "port": 5001}
+{"ts": "2026-09-20T16:38:41Z", "event": "alert_received", "status": "firing", "alertname": "EndpointDown", "severity": "critical", "container": "http://10.42.1.10/", "summary": "Endpoint http://10.42.1.10/ is failing its HTTP probe", "runbook": "docs/runbook.md#endpointdown", "action_taken": "recorded to /data/alerts.log"}

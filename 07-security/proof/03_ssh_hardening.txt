@@ -1,0 +1,25 @@
+== 1. Generate an ed25519 key pair (if absent) ==
+public key: /root/.ssh/peex_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPq79lyXJkzAAYWz7gIFX+XtLP22hGNLuVOI0u9FbPwP peex-secure-shell
+
+== 2. Validate the hardening drop-in ==
+sshd config test: OK
+-- effective hardened settings --
+maxauthtries 3
+clientaliveinterval 300
+permitrootlogin no
+pubkeyauthentication yes
+passwordauthentication no
+x11forwarding no
+permitemptypasswords no
+allowtcpforwarding no
+
+== 3. Install on a server (run AS ROOT on the target host) ==
+  sudo install -m 0644 /root/peex-build/07-security/ssh/99-peex-hardening.conf /etc/ssh/sshd_config.d/99-peex-hardening.conf
+  # add your PUBLIC key to the target user:
+  #   ssh-copy-id -i /root/.ssh/peex_ed25519.pub <user>@<host>    (or paste into ~/.ssh/authorized_keys)
+  sudo sshd -t && sudo systemctl reload ssh || sudo systemctl reload sshd
+
+== 4. USE it (client) ==
+  add ssh_client_config.sample to ~/.ssh/config, then:  ssh peex-demo
+  or directly:  ssh -i /root/.ssh/peex_ed25519 -o IdentitiesOnly=yes <user>@<host>

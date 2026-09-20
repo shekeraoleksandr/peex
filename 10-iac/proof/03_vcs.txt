@@ -1,0 +1,27 @@
+== git log ==
+02c6646 feat(iac): terraform S3 template + ansible config management
+
+== tracked files ==
+.gitignore
+README.md
+VCS.md
+ansible/ansible.cfg
+ansible/inventory.ini
+ansible/playbook.yml
+ansible/templates/app.conf.j2
+proof/01_ansible_run.txt
+proof/02_rendered_config.txt
+proof/HOWTO.md
+terraform/.gitignore
+terraform/main.tf
+terraform/outputs.tf
+terraform/terraform.tfvars.example
+terraform/variables.tf
+
+== ignored (state/secrets NOT tracked) ==
+!! terraform/terraform.tfstate
+!! terraform/terraform.tfvars
+check-ignore terraform.tfstate ->
+terraform/terraform.tfstate
+check-ignore terraform.tfvars  ->
+terraform/terraform.tfvars

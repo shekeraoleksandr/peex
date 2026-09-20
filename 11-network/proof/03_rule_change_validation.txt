@@ -1,0 +1,62 @@
+### RULE CHANGE: TEST, VALIDATE, REVERT @ 2026-09-20 11:46:45 UTC
+target security group: sg-0d8f75fee16cdf529 (web tier)
+
+Change under test: temporarily open tcp/8080 to the operator IP,
+confirm the change takes effect, then remove it and confirm the
+original posture is restored.
+
+===== BEFORE =====
+
+$ aws ec2 describe-security-groups  # ingress rules
+tcp	80	80	109.108.78.23/32	nginx demo app, from the operator IP only (not public)
+tcp	22	22	109.108.78.23/32	SSH for administration, from the operator IP only
+icmp	-1	-1	10.43.0.0/16	ICMP/SSH from the peered VPC over the private link
+tcp	9100	9100	None	None
+
+$ connectivity probe
+  :8080 not reachable
+
+===== APPLYING THE CHANGE =====
+
+$ aws ec2 authorize-security-group-ingress --port 8080 --cidr 109.108.78.23/32
+  rule added
+
+===== AFTER =====
+
+$ aws ec2 describe-security-groups  # ingress rules
+tcp	80	80	109.108.78.23/32	nginx demo app, from the operator IP only (not public)
+tcp	8080	8080	109.108.78.23/32	TEMPORARY - change-validation test
+tcp	22	22	109.108.78.23/32	SSH for administration, from the operator IP only
+icmp	-1	-1	10.43.0.0/16	ICMP/SSH from the peered VPC over the private link
+tcp	9100	9100	None	None
+
+$ connectivity probe (nothing listens on 8080, so the honest result is a
+   refused connection rather than a timeout -- the firewall now lets the
+   packet through and the OS rejects it, which is the observable change)
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+LISTEN 0      4096         0.0.0.0:22        0.0.0.0:*          
+LISTEN 0      4096   127.0.0.53%lo:53        0.0.0.0:*          
+LISTEN 0      511          0.0.0.0:80        0.0.0.0:*          
+LISTEN 0      4096      127.0.0.54:53        0.0.0.0:*          
+  :8080 not reachable
+
+===== REVERTING =====
+
+$ aws ec2 revoke-security-group-ingress --port 8080
+  rule removed
+
+===== AFTER REVERT (must match BEFORE) =====
+
+$ aws ec2 describe-security-groups  # ingress rules
+tcp	80	80	109.108.78.23/32	nginx demo app, from the operator IP only (not public)
+tcp	22	22	109.108.78.23/32	SSH for administration, from the operator IP only
+icmp	-1	-1	10.43.0.0/16	ICMP/SSH from the peered VPC over the private link
+tcp	9100	9100	None	None
+
+$ connectivity probe
+  :8080 not reachable
+
+===== DRIFT CHECK: does Terraform agree the infrastructure is unchanged? =====
+
+$ terraform plan -detailed-exitcode   # 0 = no drift
+  [DRIFT] Terraform still sees a difference:

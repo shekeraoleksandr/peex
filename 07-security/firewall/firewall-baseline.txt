@@ -1,0 +1,8 @@
+# Required firewall rules baseline (security owner approved).
+# Each non-comment line is a substring/pattern that MUST appear in the active
+# ruleset. verify-firewall.sh marks each PRESENT or MISSING.
+# Format:  <pattern>   # description
+
+dpt:22            # SSH inbound allowed
+dpt:443           # HTTPS inbound allowed
+policy DROP       # default-deny inbound policy

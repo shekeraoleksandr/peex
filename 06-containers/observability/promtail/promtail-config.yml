@@ -1,0 +1,45 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Discover every running container through the Docker socket and ship its
+  # stdout/stderr to Loki -- centralized aggregation with no per-container
+  # configuration to maintain.
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+
+    relabel_configs:
+      - source_labels: [__meta_docker_container_name]
+        regex: '/(.*)'
+        target_label: container
+      - source_labels: [__meta_docker_container_log_stream]
+        target_label: stream
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        target_label: compose_service
+      - target_label: environment
+        replacement: aws-ec2
+
+    pipeline_stages:
+      # Redact anything that looks like a secret before it is ever stored.
+      # The task explicitly requires that logging must not expose credentials,
+      # tokens or PII, and the cheapest place to enforce that is at ingest.
+      - replace:
+          expression: '(?i)(password|passwd|secret|token|api[_-]?key|authorization)["\s:=]+([^\s",}]+)'
+          replace: '${1}=***REDACTED***'
+      - replace:
+          expression: '(Bearer\s+)([A-Za-z0-9\-\._~\+\/]+=*)'
+          replace: '${1}***REDACTED***'
+      # Redact e-mail addresses (PII).
+      - replace:
+          expression: '([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
+          replace: '***@${2}'

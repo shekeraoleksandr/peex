@@ -1,0 +1,6 @@
+{
+  "name": "peex-cicd-demo",
+  "version": "1.0.0",
+  "environment": "staging",
+  "greeting_enabled": true
+}

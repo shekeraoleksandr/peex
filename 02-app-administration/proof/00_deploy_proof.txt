@@ -1,0 +1,206 @@
+# PeEx proof — Sat Sep 19 07:09:25 AM UTC 2026
+# host: Linux oleksandrshekera 6.8.0-139-generic #139-Ubuntu SMP PREEMPT_DYNAMIC Sat Aug  1 03:32:48 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux
+
+===== Dedicated service user =====
+$ getent passwd peexweb
+peexweb:x:999:988::/home/peexweb:/usr/sbin/nologin
+
+$ id peexweb
+uid=999(peexweb) gid=988(peexweb) groups=988(peexweb)
+
+===== Customized configuration =====
+$ cat /etc/peex-web/nginx-peex.conf
+# Customized standalone nginx configuration for the PeEx demo service.
+# Runs entirely under the unprivileged service user (systemd sets User=peexweb).
+# Binds to a high port so no root is needed.
+
+worker_processes auto;
+pid /run/peex-web/nginx.pid;
+error_log /var/log/peex-web/error.log warn;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include      /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    access_log /var/log/peex-web/access.log;
+
+    client_body_temp_path /var/lib/peex-web/tmp/client;
+    proxy_temp_path       /var/lib/peex-web/tmp/proxy;
+    fastcgi_temp_path     /var/lib/peex-web/tmp/fastcgi;
+    uwsgi_temp_path       /var/lib/peex-web/tmp/uwsgi;
+    scgi_temp_path        /var/lib/peex-web/tmp/scgi;
+
+    sendfile      on;
+    keepalive_timeout 65;
+    server_tokens off;
+
+    server {
+        listen 8080;
+        server_name _;
+        root  /var/www/peex-web;
+        index index.html;
+
+        location = /healthz {
+            default_type text/plain;
+            return 200 "ok\n";
+        }
+
+        location / {
+            try_files $uri $uri/ =404;
+        }
+    }
+}
+
+===== systemd unit =====
+$ systemctl cat peex-web
+# /etc/systemd/system/peex-web.service
+[Unit]
+Description=PeEx demo web service (nginx, least-privilege)
+Documentation=file:/opt/peex-web/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=peexweb
+Group=peexweb
+PIDFile=/run/peex-web/nginx.pid
+
+# systemd creates and owns these dirs for the service user on every start
+RuntimeDirectory=peex-web
+LogsDirectory=peex-web
+StateDirectory=peex-web
+
+ExecStartPre=/usr/sbin/nginx -t -c /etc/peex-web/nginx-peex.conf
+ExecStart=/usr/sbin/nginx -c /etc/peex-web/nginx-peex.conf
+ExecReload=/usr/sbin/nginx -s reload -c /etc/peex-web/nginx-peex.conf
+ExecStop=/usr/sbin/nginx -s quit -c /etc/peex-web/nginx-peex.conf
+Restart=on-failure
+RestartSec=3
+
+# --- Hardening / principle of least privilege ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ReadWritePaths=/var/log/peex-web /var/lib/peex-web /run/peex-web
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
+
+===== Service status =====
+$ systemctl status peex-web --no-pager
+● peex-web.service - PeEx demo web service (nginx, least-privilege)
+     Loaded: loaded (/etc/systemd/system/peex-web.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-09-19 07:09:16 UTC; 9s ago
+       Docs: file:/opt/peex-web/README.md
+    Process: 4983 ExecStartPre=/usr/sbin/nginx -t -c /etc/peex-web/nginx-peex.conf (code=exited, status=0/SUCCESS)
+    Process: 4984 ExecStart=/usr/sbin/nginx -c /etc/peex-web/nginx-peex.conf (code=exited, status=0/SUCCESS)
+   Main PID: 4987 (nginx)
+      Tasks: 7 (limit: 9365)
+     Memory: 4.9M (peak: 5.9M)
+        CPU: 25ms
+     CGroup: /system.slice/peex-web.service
+             ├─4987 "nginx: master process /usr/sbin/nginx -c /etc/peex-web/nginx-peex.conf"
+             ├─4988 "nginx: worker process"
+             ├─4989 "nginx: worker process"
+             ├─4990 "nginx: worker process"
+             ├─4991 "nginx: worker process"
+             ├─4992 "nginx: worker process"
+             └─4993 "nginx: worker process"
+
+Sep 19 07:09:16 oleksandrshekera systemd[1]: Starting peex-web.service - PeEx demo web service (nginx, least-privilege)...
+Sep 19 07:09:16 oleksandrshekera nginx[4983]: nginx: the configuration file /etc/peex-web/nginx-peex.conf syntax is ok
+Sep 19 07:09:16 oleksandrshekera nginx[4983]: nginx: configuration file /etc/peex-web/nginx-peex.conf test is successful
+Sep 19 07:09:16 oleksandrshekera systemd[1]: Started peex-web.service - PeEx demo web service (nginx, least-privilege).
+
+===== Auto-start enabled =====
+$ systemctl is-enabled peex-web
+enabled
+
+===== Running under the correct user =====
+$ bash -c ps -o user,pid,ppid,cmd -C nginx
+USER         PID    PPID CMD
+peexweb     4987       1 nginx: master process /usr/sbin/nginx -c /etc/peex-web/nginx-peex.conf
+peexweb     4988    4987 nginx: worker process
+peexweb     4989    4987 nginx: worker process
+peexweb     4990    4987 nginx: worker process
+peexweb     4991    4987 nginx: worker process
+peexweb     4992    4987 nginx: worker process
+peexweb     4993    4987 nginx: worker process
+
+===== Listening port =====
+$ bash -c ss -ltnp | grep ':8080 ' || ss -ltn | grep ':8080 '
+LISTEN 0      511          0.0.0.0:8080      0.0.0.0:*          
+
+===== Health / content =====
+$ curl -i http://127.0.0.1:8080/healthz
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100     3  100     3    0     0   7389      0 --:--:-- --:--:-- --:--:--  3000
+HTTP/1.1 200 OK
+Server: nginx
+Date: Sat, 19 Sep 2026 07:09:25 GMT
+Content-Type: text/plain
+Content-Length: 3
+Connection: keep-alive
+
+ok
+
+$ curl -i http://127.0.0.1:8080/
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   447  100   447    0     0  1306k      0 --:--:-- --:--:-- --:--:--  436k
+HTTP/1.1 200 OK
+Server: nginx
+Date: Sat, 19 Sep 2026 07:09:25 GMT
+Content-Type: text/html
+Content-Length: 447
+Last-Modified: Sat, 19 Sep 2026 07:09:16 GMT
+Connection: keep-alive
+ETag: "6aae351c-1bf"
+Accept-Ranges: bytes
+
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>PeEx Web Service</title></head>
+<body style="font-family:sans-serif;max-width:40rem;margin:3rem auto">
+<h1>PeEx demo web service</h1>
+<p>Deployed and configured at the OS level, managed by the systemd unit
+<code>peex-web.service</code>, running as the unprivileged user
+<code>peexweb</code> on port <strong>8080</strong>.</p>
+<p>Version: <strong>1.0.0</strong></p>
+</body></html>
+
+===== Recent logs (healthy operation) =====
+$ bash -c journalctl -u peex-web --no-pager | tail -n 20
+Sep 19 06:52:15 oleksandrshekera systemd[1]: Starting peex-web.service - PeEx demo web service (nginx, least-privilege)...
+Sep 19 06:52:15 oleksandrshekera nginx[3969]: nginx: the configuration file /etc/peex-web/nginx-peex.conf syntax is ok
+Sep 19 06:52:15 oleksandrshekera nginx[3969]: 2026/09/19 06:52:15 [emerg] 3969#3969: open() "/var/log/peex-web/error.log" failed (13: Permission denied)
+Sep 19 06:52:15 oleksandrshekera nginx[3969]: nginx: configuration file /etc/peex-web/nginx-peex.conf test failed
+Sep 19 06:52:15 oleksandrshekera systemd[1]: peex-web.service: Control process exited, code=exited, status=1/FAILURE
+Sep 19 06:52:15 oleksandrshekera systemd[1]: peex-web.service: Failed with result 'exit-code'.
+Sep 19 06:52:15 oleksandrshekera systemd[1]: Failed to start peex-web.service - PeEx demo web service (nginx, least-privilege).
+Sep 19 06:52:17 oleksandrshekera systemd[1]: Stopped peex-web.service - PeEx demo web service (nginx, least-privilege).
+Sep 19 06:52:17 oleksandrshekera systemd[1]: Starting peex-web.service - PeEx demo web service (nginx, least-privilege)...
+Sep 19 06:52:17 oleksandrshekera nginx[4207]: nginx: the configuration file /etc/peex-web/nginx-peex.conf syntax is ok
+Sep 19 06:52:17 oleksandrshekera nginx[4207]: nginx: configuration file /etc/peex-web/nginx-peex.conf test is successful
+Sep 19 06:52:17 oleksandrshekera systemd[1]: Started peex-web.service - PeEx demo web service (nginx, least-privilege).
+Sep 19 07:09:16 oleksandrshekera systemd[1]: Stopping peex-web.service - PeEx demo web service (nginx, least-privilege)...
+Sep 19 07:09:16 oleksandrshekera nginx[4979]: 2026/09/19 07:09:16 [notice] 4979#4979: signal process started
+Sep 19 07:09:16 oleksandrshekera systemd[1]: peex-web.service: Deactivated successfully.
+Sep 19 07:09:16 oleksandrshekera systemd[1]: Stopped peex-web.service - PeEx demo web service (nginx, least-privilege).
+Sep 19 07:09:16 oleksandrshekera systemd[1]: Starting peex-web.service - PeEx demo web service (nginx, least-privilege)...
+Sep 19 07:09:16 oleksandrshekera nginx[4983]: nginx: the configuration file /etc/peex-web/nginx-peex.conf syntax is ok
+Sep 19 07:09:16 oleksandrshekera nginx[4983]: nginx: configuration file /etc/peex-web/nginx-peex.conf test is successful
+Sep 19 07:09:16 oleksandrshekera systemd[1]: Started peex-web.service - PeEx demo web service (nginx, least-privilege).
+
+$ bash -c tail -n 10 /var/log/peex-web/error.log 2>/dev/null || echo '(no error log yet)'
+

@@ -1,0 +1,26 @@
+==> [Middle] Backup & restore (full data, not schema-only)
+-- Full pg_dump (schema + data):
+$ docker compose exec -T postgres pg_dump -U peex_admin -d company > backup/company_backup.sql
+$ wc -l backup/company_backup.sql
+     254 backup/company_backup.sql
+-- Restore into a fresh database to prove reproducibility:
+$ psql -d postgres -c "DROP DATABASE IF EXISTS company_restore_test;"
+DROP DATABASE
+$ psql -d postgres -c "CREATE DATABASE company_restore_test OWNER peex_admin;"
+CREATE DATABASE
+$ psql -d company_restore_test < backup/company_backup.sql   [restore]
+$ tail -5 backup/restore_output.log
+ALTER TABLE
+GRANT
+GRANT
+GRANT
+GRANT
+-- Verify restored row count matches the original (5 employees):
+$ psql -d company_restore_test -c 'SELECT COUNT(*) AS restored_rows FROM employees;'
+ restored_rows 
+---------------
+             5
+(1 row)
+
+$ psql -d postgres -c "DROP DATABASE company_restore_test;"
+DROP DATABASE

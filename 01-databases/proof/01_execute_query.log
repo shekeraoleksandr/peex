@@ -1,0 +1,16 @@
+==> [Trainee] Execute SQL query to retrieve data
+$ $PSQL -f - < sql/01_execute_query.sql
+    full_name    | department  | salary  
+-----------------+-------------+---------
+ Sofia Tkachenko | Engineering | 5000.00
+ Olena Kovalenko | Engineering | 4200.00
+ Ivan Petrenko   | Engineering | 3800.00
+(3 rows)
+
+ department  | headcount | avg_salary | max_salary 
+-------------+-----------+------------+------------
+ Engineering |         3 |    4333.33 |    5000.00
+ Finance     |         1 |    3500.00 |    3500.00
+ Operations  |         1 |    3000.00 |    3000.00
+(3 rows)
+

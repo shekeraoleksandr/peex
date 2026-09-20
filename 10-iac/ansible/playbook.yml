@@ -1,0 +1,45 @@
+---
+# Automated configuration change with Ansible (idempotent config management).
+# Renders an app config from a template and manages a hosts-style entry.
+# Change the vars below (or pass -e) and re-run to execute a config change.
+- name: PeEx IaC — configure demo app
+  hosts: local
+  gather_facts: true
+  vars:
+    base_dir: /tmp/peex-iac
+    app_env: dev
+    app_port: 8080
+    max_connections: 100
+    greeting_enabled: true
+
+  tasks:
+    - name: Ensure base directory exists
+      ansible.builtin.file:
+        path: "{{ base_dir }}/app"
+        state: directory
+        mode: "0755"
+
+    - name: Render application configuration from template
+      ansible.builtin.template:
+        src: templates/app.conf.j2
+        dest: "{{ base_dir }}/app/app.conf"
+        mode: "0644"
+      register: cfg
+
+    - name: Manage a hosts-style entry (declarative, idempotent)
+      ansible.builtin.lineinfile:
+        path: "{{ base_dir }}/managed-hosts"
+        line: "127.0.0.1 peex-app.local"
+        create: true
+        mode: "0644"
+
+    - name: Show the effective configuration
+      ansible.builtin.command: "cat {{ base_dir }}/app/app.conf"
+      register: rendered
+      changed_when: false
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: >-
+          config {{ 'CHANGED' if cfg.changed else 'unchanged' }};
+          env={{ app_env }} port={{ app_port }} max_conn={{ max_connections }}

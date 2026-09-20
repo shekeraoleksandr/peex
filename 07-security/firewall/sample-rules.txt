@@ -1,0 +1,14 @@
+# Example captured ruleset (output of `iptables -L -n`) for an offline demo.
+# On a real host, verify-firewall.sh reads the LIVE ruleset instead.
+Chain INPUT (policy DROP)
+target     prot opt source               destination
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0
+
+Chain FORWARD (policy DROP)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination

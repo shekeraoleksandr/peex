@@ -1,0 +1,31 @@
+==============================================================
+ Firewall baseline verification  —  2026-09-16 13:25:27 UTC
+ Baseline: firewall/firewall-baseline.txt
+==============================================================
+Active ruleset source: file: firewall/sample-rules.txt
+
+----- current ruleset -----
+# Example captured ruleset (output of `iptables -L -n`) for an offline demo.
+# On a real host, verify-firewall.sh reads the LIVE ruleset instead.
+Chain INPUT (policy DROP)
+target     prot opt source               destination
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0
+
+Chain FORWARD (policy DROP)
+target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination
+---------------------------
+
+Result (required rule -> status):
+PATTERN                STATUS     DESCRIPTION
+---------------------- ---------- -----------
+dpt:22                 PRESENT    SSH inbound allowed
+dpt:443                MISSING    HTTPS inbound allowed
+policy DROP            PRESENT    default-deny inbound policy
+
+REVIEW NEEDED: 1 required rule(s) MISSING — flag to security owner.

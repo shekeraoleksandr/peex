@@ -1,0 +1,132 @@
+### GCP CLOUD RUN OBSERVABILITY (read-only export) @ 2026-09-20 16:47:21 UTC
+project=movielinks-475222  region=europe-west1
+
+===== Containerized workloads under observation (Cloud Run) =====
+
+$ gcloud run services list --project movielinks-475222 --region europe-west1
+   SERVICE                     REGION        URL                                                                   LAST DEPLOYED BY                                                 LAST DEPLOYED AT
+[32m✔[39;0m  admin                       europe-west1  https://admin-190838743743.europe-west1.run.app                       oleksandrshekera@gmail.com                                       2026-07-06T16:30:37.859815Z
+[32m✔[39;0m  admin-api                   europe-west1  https://admin-api-190838743743.europe-west1.run.app                   oleksandrshekera@gmail.com                                       2026-07-06T16:30:24.086477Z
+[32m✔[39;0m  dailymatch                  europe-west1  https://dailymatch-190838743743.europe-west1.run.app                  github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-06-27T19:00:49.789673Z
+[32m✔[39;0m  frametomovie                europe-west1  https://frametomovie-190838743743.europe-west1.run.app                github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-06-09T17:44:59.473005Z
+[32m✔[39;0m  functions                   europe-west1  https://functions-190838743743.europe-west1.run.app                   github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-03-31T12:21:13.222411Z
+[32m✔[39;0m  importhub                   europe-west1  https://importhub-190838743743.europe-west1.run.app                   lucenko062@gmail.com                                             2026-08-19T20:23:48.804134Z
+[32m✔[39;0m  linktomovie                 europe-west1  https://linktomovie-190838743743.europe-west1.run.app                 github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-06-09T17:45:00.535424Z
+[32m✔[39;0m  locations                   europe-west1  https://locations-190838743743.europe-west1.run.app                   github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-03-31T12:21:13.056021Z
+[32m✔[39;0m  movielinks-service          europe-west1  https://movielinks-service-190838743743.europe-west1.run.app          190838743743-compute@developer.gserviceaccount.com               2026-09-18T00:11:29.670375Z
+[32m✔[39;0m  movielinks-service-lending  europe-west1  https://movielinks-service-lending-190838743743.europe-west1.run.app  190838743743-compute@developer.gserviceaccount.com               2026-09-13T23:02:08.113695Z
+[32m✔[39;0m  movielinks-stripe-prod      europe-west1  https://movielinks-stripe-prod-190838743743.europe-west1.run.app      lucenko062@gmail.com                                             2026-09-16T21:06:35.331255Z
+[32m✔[39;0m  movielinks-stripe-sandbox   europe-west1  https://movielinks-stripe-sandbox-190838743743.europe-west1.run.app   movielinksapp@gmail.com                                          2026-09-08T20:45:56.193087Z
+[32m✔[39;0m  quickpickwizard             europe-west1  https://quickpickwizard-190838743743.europe-west1.run.app             github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-06-09T17:44:58.650131Z
+[32m✔[39;0m  similarmovie                europe-west1  https://similarmovie-190838743743.europe-west1.run.app                github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-08-02T18:57:24.357745Z
+[32m✔[39;0m  tastefilter                 europe-west1  https://tastefilter-190838743743.europe-west1.run.app                 lucenko062@gmail.com                                             2026-08-14T20:38:58.482167Z
+[32m✔[39;0m  texttomovie                 europe-west1  https://texttomovie-190838743743.europe-west1.run.app                 github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-06-09T17:44:58.819410Z
+[32m✔[39;0m  trailers                    europe-west1  https://trailers-190838743743.europe-west1.run.app                    github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-05-02T18:31:23.680888Z
+[32m✔[39;0m  usersfilmstaste             europe-west1  https://usersfilmstaste-190838743743.europe-west1.run.app             github-actions-deploy@movielinks-475222.iam.gserviceaccount.com  2026-05-02T18:31:23.091895Z
+
+===== Dashboards defined in Cloud Monitoring =====
+
+$ gcloud monitoring dashboards list --project movielinks-475222
+DISPLAY_NAME                     NAME
+Cloud Run - Four Golden Metrics  projects/190838743743/dashboards/eb3d994c-71ff-411d-a678-57a07b87dbb8
+
+-- exporting each dashboard to gcp-export/ as versionable JSON --
+   saved gcp-export/dashboard-eb3d994c-71ff-411d-a678-57a07b87dbb8.json   (Cloud Run - Four Golden Metrics)
+
+===== Alert policies (if any) =====
+
+$ gcloud alpha monitoring policies list --project movielinks-475222
+You do not currently have this command group installed.  Using it 
+requires the installation of components: [alpha]
+
+
+Your current Google Cloud CLI version is: 560.0.0
+Installing components from version: 560.0.0
+
+┌──────────────────────────────────────────────┐
+│     These components will be installed.      │
+├───────────────────────┬────────────┬─────────┤
+│          Name         │  Version   │   Size  │
+├───────────────────────┼────────────┼─────────┤
+│ gcloud Alpha Commands │ 2026.03.09 │ < 1 MiB │
+└───────────────────────┴────────────┴─────────┘
+
+For the latest full release notes, please visit:
+  https://cloud.google.com/sdk/release_notes
+
+Once started, canceling this operation may leave your SDK installation in an inconsistent state.
+
+Do you want to continue (Y/n)?  
+Performing in place update...
+
+╔════════════════════════════════════════════════════════════╗
+╠═ Downloading: gcloud Alpha Commands                       ═╣
+╚════════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════╗
+╠═ Installing: gcloud Alpha Commands                        ═╣
+╚════════════════════════════════════════════════════════════╝
+
+Updating modules...
+Collecting cryptography==42.0.7
+  Downloading https://github.com/googleapis/enterprise-certificate-proxy/releases/download/v0.3.6/cryptography-42.0.7-cp39-abi3-macosx_10_12_universal2.whl (5.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.6/5.6 MB 11.3 MB/s eta 0:00:00
+Requirement already satisfied: crcmod in /Users/oleksandrshkera/.config/gcloud/virtenv/lib/python3.12/site-packages (1.7)
+Requirement already satisfied: grpcio in /Users/oleksandrshkera/.config/gcloud/virtenv/lib/python3.12/site-packages (1.75.1)
+Requirement already satisfied: pyopenssl==24.2.1 in /Users/oleksandrshkera/.config/gcloud/virtenv/lib/python3.12/site-packages (24.2.1)
+Requirement already satisfied: google_crc32c in /Users/oleksandrshkera/.config/gcloud/virtenv/lib/python3.12/site-packages (1.7.1)
+Requirement already satisfied: certifi in /Users/oleksandrshkera/.config/gcloud/virtenv/lib/python3.12/site-packages (2025.10.5)
+Requirement already satisfied: setuptools in /Users/oleksandrshkera/.config/gcloud/virtenv/lib/python3.12/site-packages (80.9.0)
+Requirement already satisfied: cffi>=1.12 in /Users/oleksandrshkera/.config/gcloud/virtenv/lib/python3.12/site-packages (from cryptography==42.0.7) (2.0.0)
+Requirement already satisfied: typing-extensions~=4.12 in /Users/oleksandrshkera/.config/gcloud/virtenv/lib/python3.12/site-packages (from grpcio) (4.15.0)
+Requirement already satisfied: pycparser in /Users/oleksandrshkera/.config/gcloud/virtenv/lib/python3.12/site-packages (from cffi>=1.12->cryptography==42.0.7) (2.23)
+Modules updated.
+
+Google Cloud CLI works best with Python 3.13 and certain modules.
+
+Setting up virtual environment
+Virtual env enabled.
+
+Performing post processing steps...
+................done.
+
+Update done!
+
+Restarting command:
+  $ gcloud alpha monitoring policies list --project movielinks-475222 --format=table(displayName, enabled, conditions[0].displayName)
+
+
+===== Notification channels =====
+
+$ gcloud alpha monitoring channels list --project movielinks-475222
+
+===== Log-based metrics =====
+
+$ gcloud logging metrics list --project movielinks-475222
+Listed 0 items.
+
+===== Centralized logging is live: recent Cloud Run logs =====
+
+$ gcloud logging read 'resource.type=cloud_run_revision' --limit 10
+TIMESTAMP                    SERVICE_NAME        SEVERITY  TEXT_PAYLOAD
+2026-09-20T16:47:12.778226Z  movielinks-service  INFO
+2026-09-20T16:47:12.757281Z  movielinks-service  INFO
+2026-09-20T16:47:12.757197Z  movielinks-service  INFO
+2026-09-20T16:47:12.755722Z  movielinks-service  INFO
+2026-09-20T16:47:12.755498Z  movielinks-service  INFO
+2026-09-20T16:47:12.755378Z  movielinks-service  INFO
+2026-09-20T16:47:12.755194Z  movielinks-service  INFO
+2026-09-20T16:47:12.744610Z  movielinks-service  INFO
+2026-09-20T16:47:12.744593Z  movielinks-service  INFO
+2026-09-20T16:47:12.744549Z  movielinks-service  INFO
+
+===== Example: error-severity logs across all services (log query) =====
+
+$ gcloud logging read 'resource.type=cloud_run_revision AND severity>=ERROR' --limit 5
+TIMESTAMP                    SERVICE_NAME  SEVERITY
+2026-09-20T16:43:31.486425Z  locations     ERROR
+2026-09-20T16:41:44.597605Z  locations     ERROR
+2026-09-20T16:39:12.897442Z  locations     ERROR
+2026-09-20T16:39:05.099065Z  locations     ERROR
+2026-09-20T16:23:09.998848Z  locations     ERROR
+
+EXPORT DONE -- dashboards saved under gcp-export/

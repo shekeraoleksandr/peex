@@ -1,0 +1,9 @@
+# Managed by Ansible — DO NOT EDIT BY HAND.
+# Rendered from templates/app.conf.j2 for environment: dev
+[server]
+environment = dev
+listen_port = 9090
+max_connections = 100
+
+[features]
+greeting_enabled = true

@@ -1,0 +1,60 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: aws-ec2
+    stack: peex-containers
+
+rule_files:
+  - /etc/prometheus/alert.rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  # --- the monitoring stack itself -----------------------------------------
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  # --- per-CONTAINER metrics (cpu / memory / network / disk) ----------------
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels:
+          instance_role: monitoring
+
+  # --- host metrics: monitoring instance ------------------------------------
+  - job_name: node-monitoring
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          instance_role: monitoring
+
+  # --- host metrics: web instance, over the private VPC IP ------------------
+  # Reachable only because the web security group allows 9100 from the
+  # monitoring security group (see 11-network/terraform/security-groups.tf).
+  - job_name: node-web
+    static_configs:
+      - targets: ["__WEB_PRIVATE_IP__:9100"]
+        labels:
+          instance_role: web
+
+  # --- HTTP availability + latency (blackbox probes) ------------------------
+  - job_name: blackbox-http
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://__WEB_PRIVATE_IP__/          # nginx on the web instance
+          - http://grafana:3000/api/health      # Grafana's own health endpoint
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115

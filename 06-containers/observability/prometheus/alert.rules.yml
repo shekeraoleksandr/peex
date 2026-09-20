@@ -1,0 +1,142 @@
+groups:
+
+  # ---------------------------------------------------------------- containers
+  - name: containers
+    rules:
+
+      - alert: ContainerHighCpu
+        # Per-container CPU, normalised to cores. 0.8 = 80% of one core.
+        expr: sum by (name) (rate(container_cpu_usage_seconds_total{name!=""}[2m])) > 0.8
+        for: 2m
+        labels:
+          severity: warning
+          category: container
+        annotations:
+          summary: "Container {{ $labels.name }} CPU above 80% of a core"
+          description: "{{ $labels.name }} has used {{ $value | printf \"%.2f\" }} cores for 2 minutes."
+          runbook: "docs/runbook.md#containerhighcpu"
+
+      - alert: ContainerHighMemory
+        # Only meaningful where a memory limit is set, hence the > 0 guard --
+        # without it the ratio is +Inf for unlimited containers and the alert
+        # would fire constantly (a false positive by construction).
+        expr: |
+          (container_memory_usage_bytes{name!=""}
+            / (container_spec_memory_limit_bytes{name!=""} > 0)) > 0.85
+        for: 3m
+        labels:
+          severity: warning
+          category: container
+        annotations:
+          summary: "Container {{ $labels.name }} above 85% of its memory limit"
+          description: "{{ $labels.name }} is at {{ $value | humanizePercentage }} of its limit."
+          runbook: "docs/runbook.md#containerhighmemory"
+
+      - alert: ContainerRestarted
+        # cAdvisor resets container_start_time_seconds on restart.
+        expr: changes(container_start_time_seconds{name!=""}[10m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          category: container
+        annotations:
+          summary: "Container {{ $labels.name }} restarted"
+          description: "{{ $labels.name }} restarted within the last 10 minutes."
+          runbook: "docs/runbook.md#containerrestarted"
+
+      - alert: ContainerDisappeared
+        # cAdvisor stops reporting a container that died and was not restarted.
+        expr: time() - container_last_seen{name!=""} > 60
+        for: 1m
+        labels:
+          severity: critical
+          category: container
+        annotations:
+          summary: "Container {{ $labels.name }} has disappeared"
+          description: "No cAdvisor sample for {{ $labels.name }} in over a minute."
+          runbook: "docs/runbook.md#containerdisappeared"
+
+  # --------------------------------------------------------------- host/infra
+  - name: infrastructure
+    rules:
+
+      - alert: TargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Scrape target {{ $labels.job }} / {{ $labels.instance }} is down"
+          description: "Prometheus has failed to scrape this target for 2 minutes."
+          runbook: "docs/runbook.md#targetdown"
+
+      - alert: HostHighMemory
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.90
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Host {{ $labels.instance_role }} memory above 90%"
+          description: "Available memory on {{ $labels.instance }} is under 10%."
+          runbook: "docs/runbook.md#hosthighmemory"
+
+      - alert: HostDiskFilling
+        expr: |
+          (1 - (node_filesystem_avail_bytes{mountpoint="/"}
+                / node_filesystem_size_bytes{mountpoint="/"})) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Root filesystem on {{ $labels.instance }} above 85%"
+          description: "Prometheus TSDB growth is the usual cause on this box."
+          runbook: "docs/runbook.md#hostdiskfilling"
+
+  # ------------------------------------------------------ application / probes
+  - name: application
+    rules:
+
+      - alert: EndpointDown
+        # The readiness/liveness signal for workloads with no metrics endpoint.
+        expr: probe_success == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: application
+        annotations:
+          summary: "Endpoint {{ $labels.instance }} is failing its HTTP probe"
+          description: "blackbox_exporter could not get a 2xx for 2 minutes."
+          runbook: "docs/runbook.md#endpointdown"
+
+      - alert: EndpointSlow
+        expr: probe_duration_seconds > 2
+        for: 3m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "Endpoint {{ $labels.instance }} is slow"
+          description: "Probe latency {{ $value | printf \"%.2f\" }}s exceeds the 2s objective."
+          runbook: "docs/runbook.md#endpointslow"
+
+  # ------------------------------------------------------------ demo/trigger
+  - name: demo
+    rules:
+
+      # Deliberately low threshold so scripts/trigger-alert.sh can fire a real
+      # incident on demand for the "triggered alert" artifact. Not a production
+      # rule -- it is scoped to the stress container only.
+      - alert: DemoStressAlert
+        expr: sum by (name) (rate(container_cpu_usage_seconds_total{name="peex_stress"}[1m])) > 0.2
+        for: 30s
+        labels:
+          severity: critical
+          category: demo
+        annotations:
+          summary: "DEMO: stress container is burning CPU"
+          description: "Fired on purpose by scripts/trigger-alert.sh to demonstrate the alert path."
+          runbook: "docs/runbook.md#demostressalert"

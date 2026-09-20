@@ -1,0 +1,33 @@
+pipeline start 2026-09-16 13:31:01 UTC  app version=1.0.0
+
+==================== STAGE: lint ====================
+lint OK (py_compile)
+
+==================== STAGE: test ====================
+test_config_valid (test_calc.TestConfig.test_config_valid) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.000s
+
+OK
+tests OK
+
+==================== STAGE: build ====================
+built artifact: peex-cicd-demo-1.0.0.tar.gz (3641 bytes)
+
+==================== STAGE: deploy ====================
+serving on :8091 config=/root/peex-build/08-cicd/build/deploy/config/app.config.json
+deploy OK (healthz 200)
+  / -> Hello from PeEx CI/CD — v1.0.0 (staging)
+  /version -> {"name": "peex-cicd-demo", "version": "1.0.0", "environment": "staging"}
+
+==================== STAGE: verify ====================
+== Verify pipeline execution results ==
+  PASS: unit tests reported OK
+  PASS: build artifact present: peex-cicd-demo-1.0.0.tar.gz
+  PASS: deployed app healthy; /version = {"name": "peex-cicd-demo", "version": "1.0.0", "environment": "staging"}
+  PASS: deployed version matches config (1.0.0)
+
+VERIFY: all pipeline results OK
+
+PIPELINE SUCCEEDED (version 1.0.0)

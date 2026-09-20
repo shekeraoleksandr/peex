@@ -1,0 +1,10 @@
+=== System report (2026-09-20 17:11:28 UTC) ===
+Host        : Oleksandrs-MBP.kievnet.com.ua
+Platform    : Darwin
+Kernel      : Darwin 25.6.0
+Uptime      : up 20713d 11h 1m
+Load avg    : 3.39 3.08 2.93
+CPUs        : 12
+Memory used : 27309/36864 MB
+Disk (/)    : 12Gi/460Gi (6%)
+Top procs   : com.apple.Virtua:149.2%,XprotectService:35.2%,QEMULauncher:11.0%

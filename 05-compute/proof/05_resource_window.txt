@@ -1,0 +1,24 @@
+### VM RESOURCE USAGE — MONITORING WINDOW
+
+WHAT was collected : CPU busy %, memory used %, 1-minute load average
+WHERE              : EC2 web instance 32.196.140.165 (t3.micro, Ubuntu 24.04)
+HOW                : /proc/stat deltas and /proc/meminfo, sampled over SSH
+                     (raw samples: proof/05_resource_samples.csv)
+WHEN               : 2026-09-20 13:28:01 UTC  ->  2026-09-20 13:31:03 UTC
+WINDOW             : 36 samples at 5s intervals
+
+OBSERVED VALUES
+  CPU busy               min    0.0%   avg   22.4%   max  100.0%
+  Memory used            min   36.7%   avg   36.8%   max   36.8%
+  Load average (1m)      min    0.0   avg    0.3   max    1.0
+
+CHANGES AND PEAKS
+  Peak CPU 100.0% at 13:29:23 UTC (sample 16).
+  Pre-burst CPU averaged 0.2%, so the peak is +99.8 points above the
+  idle baseline. The burst was induced on purpose at sample 15; it is
+  not an unexplained event.
+  Memory moved 0.1 points across the window (36.7% -> 36.8%) — essentially flat, as expected for an idle nginx host.
+  Load average peaked at 0.97 against 2 vCPUs.
+
+NOTE: observation only. Per the task description, no root-cause analysis
+is performed here.

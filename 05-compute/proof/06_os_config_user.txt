@@ -1,0 +1,57 @@
+### BASIC OS CONFIGURATION — CREATE AND VERIFY A USER ACCOUNT
+target : EC2 web instance 32.196.140.165 (Ubuntu 24.04)
+user   : peexops
+auth   : ed25519 key pair generated for this account specifically
+
+===== BEFORE: the account does not exist =====
+
+$ getent passwd peexops
+Warning: Permanently added '32.196.140.165' (ED25519) to the list of known hosts.
+(no such user — as expected)
+
+===== APPLYING THE CONFIGURATION =====
+
+$ useradd + sudo group + authorized_keys  (idempotent)
+user created
+ssh key installed
+
+===== AFTER: the account exists, with the expected properties =====
+
+$ getent passwd peexops; id peexops
+peexops:x:1001:1001::/home/peexops:/bin/bash
+uid=1001(peexops) gid=1001(peexops) groups=1001(peexops),27(sudo)
+
+$ ls -la /home/peexops/.ssh   # permissions matter: sshd refuses loose modes
+total 12
+drwx------ 2 peexops peexops 4096 Sep 20 13:27 .
+drwxr-x--- 3 peexops peexops 4096 Sep 20 13:27 ..
+-rw------- 1 peexops peexops   94 Sep 20 13:27 authorized_keys
+
+===== VERIFICATION: authenticate AS the new user, in a new session =====
+(this is the part the outcome actually asks for — existence alone is not proof)
+
+$ ssh -i .peexops_key peexops@32.196.140.165 'whoami; id; hostname'
+authenticated as: peexops
+uid=1001(peexops) gid=1001(peexops) groups=1001(peexops),27(sudo)
+ip-10-42-1-10
+--- sudo works? ---
+sudo: a password is required
+sudo: requires a password (expected — no password set)
+
+  [OK] authentication as peexops succeeded
+
+===== The configuration is reflected in system behaviour =====
+
+$ last/lastlog entry for the new account
+Username         Port     From                                       Latest
+peexops                                                             **Never logged in**
+
+$ auth log shows the accepted key-based login
+2026-09-20T13:27:20.010572+00:00 ip-10-42-1-10 sudo:  peexops : a password is required ; PWD=/home/peexops ; USER=root ; COMMAND=/usr/bin/true
+2026-09-20T13:27:20.132202+00:00 ip-10-42-1-10 sshd[5132]: Disconnected from user peexops 109.108.78.23 port 54776
+2026-09-20T13:27:20.132852+00:00 ip-10-42-1-10 sshd[5071]: pam_unix(sshd:session): session closed for user peexops
+2026-09-20T13:27:21.611618+00:00 ip-10-42-1-10 sudo:   ubuntu : PWD=/home/ubuntu ; USER=root ; COMMAND=/usr/bin/lastlog -u peexops
+2026-09-20T13:27:23.224074+00:00 ip-10-42-1-10 sudo:   ubuntu : PWD=/home/ubuntu ; USER=root ; COMMAND=/usr/bin/grep -i peexops /var/log/auth.log
+
+OS CONFIGURATION DONE
+Private key for peexops: 05-compute/.peexops_key (git-ignored, demo only)

@@ -1,0 +1,48 @@
+### ACCESS TESTS @ 2026-09-20 10:56:07 UTC  bucket=peex-storage-demo-991246619778
+(IAM is eventually consistent — allowing a few seconds for role propagation)
+
+===== READ-WRITE role: expect upload + download OK =====
+whoami:
+arn:aws:sts::991246619778:assumed-role/peex-s3-readwrite-role/peex
+$ upload (v1)
+Completed 50 Bytes/50 Bytes (42 Bytes/s) with 1 file(s) remainingupload: ../../../../../tmp/peex-test-26167.txt to s3://peex-storage-demo-991246619778/test.txt
+upload rc=0
+$ download
+Completed 50 Bytes/50 Bytes (58 Bytes/s) with 1 file(s) remainingdownload: s3://peex-storage-demo-991246619778/test.txt to ../../../../../tmp/peex-dl-rw.txt
+download rc=0
+$ upload (v2, same key -> previous version must be retained)
+Completed 89 Bytes/89 Bytes (90 Bytes/s) with 1 file(s) remainingupload: ../../../../../tmp/peex-test-26167.txt to s3://peex-storage-demo-991246619778/test.txt
+upload rc=0
+
+===== READ-ONLY role: expect download OK, upload DENIED =====
+whoami:
+arn:aws:sts::991246619778:assumed-role/peex-s3-readonly-role/peex
+$ download (should succeed)
+Completed 89 Bytes/89 Bytes (105 Bytes/s) with 1 file(s) remainingdownload: s3://peex-storage-demo-991246619778/test.txt to ../../../../../tmp/peex-dl-ro.txt
+download rc=0
+$ upload (should be DENIED)
+Completed 89 Bytes/89 Bytes (109 Bytes/s) with 1 file(s) remainingupload failed: ../../../../../tmp/peex-test-26167.txt to s3://peex-storage-demo-991246619778/should-fail.txt An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::991246619778:assumed-role/peex-s3-readonly-role/peex is not authorized to perform: s3:PutObject on resource: "arn:aws:s3:::peex-storage-demo-991246619778/should-fail.txt" because no identity-based policy allows the s3:PutObject action
+upload rc=1  (non-zero = correctly denied)
+$ delete (should be DENIED)
+delete failed: s3://peex-storage-demo-991246619778/test.txt An error occurred (AccessDenied) when calling the DeleteObject operation: User: arn:aws:sts::991246619778:assumed-role/peex-s3-readonly-role/peex is not authorized to perform: s3:DeleteObject on resource: "arn:aws:s3:::peex-storage-demo-991246619778/test.txt" because no identity-based policy allows the s3:DeleteObject action
+delete rc=1  (non-zero = correctly denied)
+
+===== Deterministic IAM policy simulation =====
+-- Read-only policy: GetObject should be allowed, PutObject denied --
+s3:GetObject	allowed
+s3:PutObject	implicitDeny
+-- Read-write policy: GetObject and PutObject should both be allowed --
+s3:GetObject	allowed
+s3:PutObject	allowed
+
+===== Object versioning proof (multiple versions kept) =====
+test.txt	Nga.nhjDKKAS4TWuTcuj3saCsEL6igkv	True	2026-09-20T10:56:22+00:00	89
+test.txt	uvm6LghdUqRfe1sHLWbNiq_fuMUQi9jq	False	2026-09-20T10:56:19+00:00	50
+test.txt	uU2_d_0Nlcgk96U00TLZ2FNjQqvY7DUB	False	2026-09-19T10:55:56+00:00	50
+-- version count (expect >= 2 after the two uploads above) --
+3
+-- the PREVIOUS version is still retrievable by its VersionId --
+restored old version uvm6LghdUqRfe1sHLWbNiq_fuMUQi9jq:
+peex storages access test 2026-09-20 10:56:07 UTC
+
+ACCESS TESTS DONE

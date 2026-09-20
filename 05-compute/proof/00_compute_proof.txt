@@ -1,0 +1,52 @@
+### COMPUTE PROOF @ 2026-09-20 13:25:07 UTC  (instance provisioned by ../11-network/terraform)
+
+===== 1) Provision: predefined type + image, running state =====
+
+===== 2) Verify VM access (SSH) =====
+ubuntu
+uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu),4(adm),24(cdrom),27(sudo),30(dip),105(lxd)
+Linux ip-10-42-1-10 7.0.0-1012-aws #12~24.04.1-Ubuntu SMP PREEMPT Wed Aug 12 14:00:57 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+ Static hostname: ip-10-42-1-10
+       Icon name: computer-vm
+         Chassis: vm 🖴
+      Machine ID: ec2a4a5a62639e0cdf710a5cffb4f95a
+         Boot ID: d6a4319730174c96b7083bbe530a2619
+  Virtualization: amazon
+Operating System: Ubuntu 24.04.4 LTS
+          Kernel: Linux 7.0.0-1012-aws
+    Architecture: x86-64
+ Hardware Vendor: Amazon EC2
+  Hardware Model: t3.micro
+Firmware Version: 1.0
+   Firmware Date: Mon 2017-10-16
+    Firmware Age: 8y 11month 4d
+
+===== 3) Basic OS configuration (applied by cloud-init, no manual steps) =====
+-- nginx installed + enabled + active --
+enabled
+active
+-- hostname --
+ip-10-42-1-10
+-- served content --
+<html><body>
+<h1>PeEx demo — web instance</h1>
+<p>host: ip-10-42-1-10.ec2.internal</p>
+<p>provisioned by Terraform, inside a private VPC subnet, behind a security-group firewall.</p>
+</body></html>
+
+===== 4) Monitor VM resource usage =====
+-- uptime / load --
+ 13:25:14 up  1:43,  2 users,  load average: 0.00, 0.00, 0.00
+-- memory --
+               total        used        free      shared  buff/cache   available
+Mem:           909Mi       337Mi       237Mi       2.7Mi       448Mi       572Mi
+Swap:             0B          0B          0B
+-- disk --
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root       6.8G  2.3G  4.4G  35% /
+-- node_exporter (the metric source Prometheus scrapes) --
+node_load1 0
+node_memory_MemAvailable_bytes 6.00203264e+08
+(the same CPU/memory numbers are also visible live in Grafana -- see ../11-network/proof)
+
+COMPUTE PROOF DONE

@@ -1,0 +1,9 @@
+# Managed by Ansible — DO NOT EDIT BY HAND.
+# Rendered from templates/app.conf.j2 for environment: {{ app_env }}
+[server]
+environment = {{ app_env }}
+listen_port = {{ app_port }}
+max_connections = {{ max_connections }}
+
+[features]
+greeting_enabled = {{ greeting_enabled | lower }}

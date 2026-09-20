@@ -1,0 +1,9 @@
+== FIXED script (expected: old.log deleted, new.log kept) ==
+  PASS: old.log removed by fixed
+  PASS: new.log kept by fixed
+== BROKEN script (demonstrates the bug: deletes NEW, keeps OLD) ==
+  PASS: broken wrongly deletes new.log
+  PASS: broken wrongly keeps old.log
+
+RESULT: 4 passed, 0 failed
+The fix is verified and the bug is reproduced.

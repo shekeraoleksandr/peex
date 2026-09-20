@@ -1,0 +1,59 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: webhook
+  group_by: [alertname, name]
+  group_wait: 20s
+  group_interval: 2m
+  # Deliberately long: re-notifying every few minutes for a condition someone
+  # is already working on is how alert fatigue starts.
+  repeat_interval: 4h
+
+  routes:
+    # Critical alerts skip the grouping delay and are repeated more often.
+    - matchers:
+        - severity="critical"
+      receiver: webhook
+      group_wait: 5s
+      repeat_interval: 1h
+
+inhibit_rules:
+  # If a container vanished, its CPU/memory alerts are noise -- suppress them.
+  - source_matchers:
+      - alertname="ContainerDisappeared"
+    target_matchers:
+      - category="container"
+    equal: [name]
+
+  # A down scrape target makes every alert derived from it meaningless.
+  - source_matchers:
+      - alertname="TargetDown"
+    target_matchers:
+      - severity="warning"
+    equal: [instance]
+
+receivers:
+  - name: webhook
+    webhook_configs:
+      - url: http://webhook-sink:5001/alert
+        send_resolved: true
+
+  # ---------------------------------------------------------------------------
+  # Email delivery. Left disabled on purpose: enabling it here would mean
+  # putting an SMTP app password in a config file. Two credential-free
+  # alternatives are wired up instead:
+  #   1. the webhook receiver above (the automated process), and
+  #   2. a CloudWatch alarm -> SNS -> your email, defined in ../terraform/
+  #      (AWS-native, no secrets on disk).
+  # To use SMTP anyway, put the password in a file and reference it with
+  # auth_password_file rather than inlining it.
+  #
+  # - name: email
+  #   email_configs:
+  #     - to: you@example.com
+  #       from: alerts@example.com
+  #       smarthost: smtp.gmail.com:587
+  #       auth_username: you@example.com
+  #       auth_password_file: /etc/alertmanager/smtp_password
+  #       send_resolved: true

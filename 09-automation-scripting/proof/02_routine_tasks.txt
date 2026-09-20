@@ -1,0 +1,11 @@
+2026-09-20 20:11:35 [backup] [dry-run] would create /tmp/peexbk/backup-20260920-201135.tar.gz from ./scripts
+2026-09-20 20:11:35 [backup] retention OK (0 backups, keeping 2)
+2026-09-20 20:11:35 [backup] created /tmp/peexbk/backup-20260920-201135.tar.gz (    4217 bytes)
+2026-09-20 20:11:35 [backup] retention OK (1 backups, keeping 2)
+ENDPOINT                                 CODE   RESULT
+---------------------------------------- ------ ------
+https://example.com                      200    OK
+https://www.wikipedia.org                200    OK
+https://this-domain-should-not-exist-peex.invalid 000    FAIL
+
+2026-09-20 20:11:35 [healthcheck] checked 3 endpoint(s), 1 unhealthy

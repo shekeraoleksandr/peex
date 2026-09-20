@@ -1,0 +1,111 @@
+### CONTAINER REGISTRY @ 2026-09-20 16:21:20 UTC
+project=movielinks-475222  region=europe-west1  host=europe-west1-docker.pkg.dev
+
+$ gcloud auth list
+      Credentialed Accounts
+ACTIVE  ACCOUNT
+*       oleksandrshekera@gmail.com
+
+To set the active account, run:
+    $ gcloud config set account `ACCOUNT`
+
+
+$ gcloud artifacts repositories list --project movielinks-475222 --location europe-west1
+Listing items under project movielinks-475222, location europe-west1.
+
+                                                                                                                           ARTIFACT_REGISTRY
+REPOSITORY               FORMAT  MODE                 DESCRIPTION                                                                                 LOCATION      LABELS                          ENCRYPTION          CREATE_TIME          UPDATE_TIME          SIZE (MB)
+cloud-run-source-deploy  DOCKER  STANDARD_REPOSITORY  Cloud Run Source Deployments                                                                europe-west1                                  Google-managed key  2026-09-08T21:53:14  2026-09-08T23:45:39  122.576
+gcf-artifacts            DOCKER  STANDARD_REPOSITORY  This repository is created and used by Cloud Functions for storing function docker images.  europe-west1  goog-managed-by=cloudfunctions  Google-managed key  2025-11-08T21:13:12  2025-12-31T11:11:26  700.028
+movie-links              DOCKER  STANDARD_REPOSITORY                                                                                              europe-west1                                  Google-managed key  2025-10-28T16:02:55  2026-09-18T03:11:32  56897.726
+movie-links-lending      DOCKER  STANDARD_REPOSITORY                                                                                              europe-west1                                  Google-managed key  2025-11-01T17:09:17  2026-09-14T02:02:10  10805.059
+movielinks-functions     DOCKER  STANDARD_REPOSITORY  Container images for MovieLinks Cloud Run services                                          europe-west1                                  Google-managed key  2025-12-15T15:04:30  2026-08-19T23:23:27  22888.066
+
+$ gcloud artifacts docker images list europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod --include-tags --limit 10
+Listing items under project movielinks-475222, location europe-west1, repository movie-links-lending.
+
+IMAGE                                                                           DIGEST                                                                   TAGS     CREATE_TIME          UPDATE_TIME          SIZE
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:7be8101a0d6114dc3ef837f3df16902878b9809cf76b55328f65eccf6c6c2fe2  cf23a38  2026-09-14T02:00:12  2026-09-14T02:00:12  263545055
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:7942e810e467ff35667f09de977da936d5cf99e137bb1b2e51bcd5a8e2aff5dd  961d002  2026-09-13T23:21:21  2026-09-13T23:21:21  263547383
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:62f3703d89fba793ce7b37b2f83c9453b48fa6d093cd12d9a18d02a2092101dd  b037e35  2026-09-13T00:16:40  2026-09-13T00:16:40  301468734
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:85841bdbb134dbdb55c0331079ead1766c9d92455be99e58757bf9be58dd5050  ce3832f  2026-09-12T22:51:23  2026-09-12T22:51:23  301465005
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:aa4efeb79331c5a647646fbda3d4f7f313055a0362ad7e06f8a0e615f458a792  221eaec  2026-09-12T20:18:07  2026-09-12T20:18:07  301453101
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:070fd5e3242ead253ec36a36fbd8181ec2a43230adc215f39ba13b4f7bc983a2  0bee580  2026-09-12T20:11:55  2026-09-12T20:11:55  301451369
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:7d748e7cdc73581dae7fe2d9e6d11cc1eedc3b853e3a0f133a0fd78507cf3102  5312c5b  2026-09-12T15:47:59  2026-09-12T15:47:59  301450613
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:524a9e2a851d6576bce650cd0856a4af91920cb4ba91ba65f4006d7fe954895d  556a694  2026-09-05T19:51:53  2026-09-05T19:51:53  299271257
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:ca8c932d8622c31c37da8a123c2b834670cdb7fc778c8328ee7e56d00c632dc3  67aff18  2026-09-01T16:36:13  2026-09-01T16:36:13  299282746
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod  sha256:aecc7b10d861fbf550d7b28bd76db53b823251fa55dcfa01c9858254ee883d18  c906cad  2026-08-21T22:35:35  2026-08-21T22:35:35  299269930
+
+$ gcloud artifacts docker images list europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions --include-tags --limit 20
+Listing items under project movielinks-475222, location europe-west1, repository movielinks-functions.
+
+IMAGE                                                                            DIGEST                                                                   TAGS            CREATE_TIME          UPDATE_TIME          SIZE
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/dailymatch    sha256:2c3fdcb74ff8ae5b1df1bb9a70db782bbdacf03d35c1a14ebee5ae54c29d4d6d  8aabce2         2026-05-12T23:28:30  2026-06-26T20:38:15  96141519
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/dailymatch    sha256:b56c72321b3966b3e5ae81a75f5fa1cfd7d95cd7536220e93f5d4ae107fa066e  37a9912,latest  2026-06-26T20:38:15  2026-06-26T20:38:15  98091580
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/dailymatch    sha256:c74f778cc8016c4050af119466168e49620beb2361ca0e1db0dc1d01f5e64902  4cc651a         2026-04-21T22:47:47  2026-05-12T23:28:30  95988140
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/dailymatch    sha256:935d3ca29e937ba6296010d8fcd04bf561c24d0791e04b2e039a60e91f41e966  675ef1f         2026-04-09T15:45:54  2026-04-21T22:47:47  95910201
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/dailymatch    sha256:a8af93eecdc5def45c57253185f4208d1cd90990655dd7c3f88240da09974fe3  1025d00         2026-04-08T23:35:09  2026-04-09T15:45:54  95913563
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/dailymatch    sha256:4d90e9409317e245d2f96be184c0dc45037f8f9ab8a733a28302946975c9ad66  a508188         2026-04-08T23:21:51  2026-04-08T23:35:10  95911793
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/dailymatch    sha256:d08ec8dfdafe456708ee21d90ac0d8167f6b1ea2e73a698aa427c83a407782f5                  2026-04-08T21:57:49  2026-04-08T23:21:51  95912656
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/dailymatch    sha256:c83b188699ead70b0ee3c0bd1db1b10179e2ead24ad753d2de4d904f4970e2b9  d5323e7         2026-04-06T22:05:55  2026-04-08T21:57:50  95884223
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/admin         sha256:a6527bc9e7da9540a989296cdd7d818e87f5d48bad82a4cfbb53d8fc46675903  d5323e7,latest  2026-04-07T17:45:30  2026-04-07T17:45:30  28943217
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/admin         sha256:b88d3f51583fb2adc69dd0bbc3fd7925c0f4767648417dae29ae803681f3c334  8464c3b         2026-04-06T22:02:14  2026-04-07T17:45:30  28943218
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/admin-api     sha256:b75e135a3304c1752b6bafaa6c68772f96d15c61596be0cef990e71d6f3a0ad4  6538ff2         2026-03-20T22:53:18  2026-04-07T17:33:41  264411975
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/admin-api     sha256:d80f26efa549476dc712f88064457c36911930312966c1ac36a64fc7e15d823b  d5323e7,latest  2026-04-07T17:33:41  2026-04-07T17:33:41  264815723
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/dailymatch    sha256:b8d73f69e396fc866b4ac180bda0257a2c3d69b96ad96c1566b77d5e675e13ea  1bba941         2026-04-05T21:21:40  2026-04-06T22:05:56  95881343
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/admin         sha256:0f409332578cbd901aa8554913c43e7dc5c949cc53e0b45fc1a40aff0cf778c9  6538ff2         2026-03-20T23:04:03  2026-04-06T22:02:14  28942030
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/admin         sha256:9982be9769b919091bc6dad48c4dd0c622c0e067e7c2aefc109a61f1a7779988  6c18dd5         2026-03-14T15:08:23  2026-03-20T23:04:03  28942036
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/admin-api     sha256:a5210951d184d0c519ae97dda943891a95afd9b2102e5c2007f5eb29a8d8c961  f44abd7         2026-03-14T14:50:10  2026-03-20T22:53:18  264235695
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/frametomovie  sha256:220700602839a606a73349f33c80b381637975e95771b4adb5388ce6f677eb35  2f4ef8d         2026-01-24T19:38:26  2026-01-24T19:52:17  108872116
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/frametomovie  sha256:2bb9c3160140d45b61d0ce8025193f1b4454690d48f7feb42a722b1fd3a2f866  bf07a4d         2026-01-08T18:41:17  2026-01-11T21:55:06  109203259
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/frametomovie  sha256:14e9c45941e59976c73a7c87c6bdcaecc66b297b77e0af1914ab403cd8e108f2  8490a40         2025-12-27T18:38:54  2025-12-27T18:54:37  109131052
+europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/frametomovie  sha256:25dd3210715c6efc7602d6c17290c0bd517d61c8f55446d2b04838c69060a285                  2025-12-20T22:36:19  2025-12-21T13:13:29  109140442
+
+-- the pipelines that push these images (the real 'docker push' step) --
+
+$ sed -n '1,30p' $MOVIELINKS/movielinksParser/infra/cloudbuild/tastefilter/cloudbuild.yaml
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build'
+    args:
+      - 'build'
+      - '-t'
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/tastefilter:latest'
+      - '-t'
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/tastefilter:$SHORT_SHA'
+      - 'tasteFilter'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/tastefilter'
+    waitFor: ['build']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy'
+    args:
+      - 'gcloud'
+      - 'run'
+      - 'deploy'
+      - 'tastefilter'
+      - '--image=$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/tastefilter:$SHORT_SHA'
+      - '--region=$_REGION'
+      - '--platform=managed'
+
+$ gcloud builds list --project movielinks-475222 --limit 10
+ID                                    CREATE_TIME                DURATION  SOURCE                                                                                           IMAGES                                                                                                          STATUS
+64e74160-3b3f-4a72-b6be-e2a8bbc0966f  2026-09-08T18:53:39+00:00  47S       gs://movielinks-475222_cloudbuild/source/1788893618.066953-cf130ce8ef1142b3a91b975f6ef855a4.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movie-links/stripe-sandbox:v1                                     SUCCESS
+1dd7d66f-be7b-4404-816b-baf4d0e3b806  2026-08-19T20:21:29+00:00  1M45S     gs://movielinks-475222_cloudbuild/source/1787170887.066688-0c97547444384eb8ba243d6fc7a02c9f.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/importhub:library-dedupe-20260819            SUCCESS
+0ceb769a-8dcc-4a32-b7a7-176855bea5e3  2026-08-18T19:39:45+00:00  1M50S     gs://movielinks-475222_cloudbuild/source/1787081983.018666-a8976ab558ba459ab890e14b94dc61a0.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/importhub:netflix-favorites-torate-20260818  SUCCESS
+c5f6adbb-98f1-48e2-a6ea-6b6f29cbda5d  2026-08-18T19:30:04+00:00  1M46S     gs://movielinks-475222_cloudbuild/source/1787081402.561203-56d56e6b56094a85a6322a2104d678e6.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/importhub:netflix-torate-20260818            SUCCESS
+50400861-df20-4d38-9090-09b5ae518f64  2026-08-17T20:14:37+00:00  1M15S     gs://movielinks-475222_cloudbuild/source/1786997675.414328-fa5cc75802cc43cbb21cbd175e97fc2a.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/importhub:undefined-sanitize-20260817        SUCCESS
+b37f43e1-457c-4caa-a4a5-b18b3bad120e  2026-08-17T19:42:21+00:00  13M18S    gs://movielinks-475222_cloudbuild/source/1786995729.479224-b883f7604c10482ebeb4e15acee37132.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movie-links/app-prod (+1 more)                                    SUCCESS
+f4a1c2bd-4967-4a2e-ae9d-6f7711ae1c44  2026-08-14T20:37:02+00:00  1M10S     gs://movielinks-475222_cloudbuild/source/1786739821.358924-8b6f91fe2689429d824055037da21b18.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/tastefilter:codex-20260814-full-row-12       SUCCESS
+e6bced9c-c850-48ef-b325-35845b3f9cc5  2026-06-27T18:48:31+00:00  1M20S     gs://movielinks-475222_cloudbuild/source/1782586109.489964-46a73f225e3c4ed0b74366138ea6d819.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/tastefilter:scheduler-20260627-3             SUCCESS
+4d743baf-b6c3-4d71-a79f-251292c4270f  2026-06-27T18:39:30+00:00  1M25S     gs://movielinks-475222_cloudbuild/source/1782585567.847442-27df65fefc3846c083543472f681a7c1.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/tastefilter:scheduler-20260627-2             SUCCESS
+e2a77209-a4db-4f65-a34b-9b02a9e49077  2026-06-27T18:32:13+00:00  1M18S     gs://movielinks-475222_cloudbuild/source/1782585131.615447-dd24be84a847414690348ceda1dd9eb0.tgz  europe-west1-docker.pkg.dev/movielinks-475222/movielinks-functions/tastefilter:scheduler-20260627               SUCCESS
+
+REGISTRY LISTING DONE

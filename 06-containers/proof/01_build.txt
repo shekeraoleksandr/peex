@@ -1,0 +1,230 @@
+### BUILD @ 2026-09-20 13:43:43 UTC
+source repo: /Users/oleksandrshkera/Desktop/peex/06-containers/../../MovieLinks/movieLinks-landing
+commit:      2339ad4 (prodaction)
+image:       movielinks-landing:peex-local  (+ movielinks-landing:2339ad4)
+
+$ git -C $LANDING log --oneline -3 -- Dockerfile
+fcfa1d1 Updated Dockerfile, cloud build. Tested deploy
+3458c8a Added Docker file and cloud build script
+
+$ cat $LANDING/Dockerfile
+FROM node:20.19.0-bullseye-slim AS base
+WORKDIR /usr/src/app
+ENV NG_CLI_ANALYTICS=false
+FROM base AS deps
+COPY package*.json ./
+RUN npm ci
+
+
+FROM base AS builder
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+FROM base AS prod-deps
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY package*.json ./
+RUN npm prune --omit=dev
+
+FROM base AS production
+ENV NODE_ENV=production
+ENV PORT=4000
+
+COPY --chown=node:node --from=prod-deps /usr/src/app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /usr/src/app/dist ./dist
+
+USER node
+
+EXPOSE 4000
+
+CMD ["node", "dist/movielinks-landing/server/server.mjs"]
+
+$ git -C $LANDING archive --format=tar HEAD | wc -c   # build context size
+121313280 bytes (115.7 MB)
+(for contrast, the full working tree is ~947MB -- see README, .dockerignore finding)
+
+$ git -C $LANDING archive --format=tar HEAD | docker build -t movielinks-landing:peex-local -t movielinks-landing:2339ad4 -
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load remote build context
+#1 DONE 0.9s
+
+#1 [internal] load remote build context
+#1 DONE 0.9s
+
+#2 copy /context /
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/node:20.19.0-bullseye-slim
+#3 DONE 1.0s
+
+#4 [base 1/2] FROM docker.io/library/node:20.19.0-bullseye-slim@sha256:c9063968e5c359c7430892bd48448f8368aa0a76527b816e03bce59fe08bfd93
+#4 resolve docker.io/library/node:20.19.0-bullseye-slim@sha256:c9063968e5c359c7430892bd48448f8368aa0a76527b816e03bce59fe08bfd93 done
+#4 DONE 0.0s
+
+#5 [base 2/2] WORKDIR /usr/src/app
+#5 CACHED
+
+#6 [deps 1/2] COPY package*.json ./
+#6 DONE 0.1s
+
+#7 [deps 2/2] RUN npm ci
+#7 0.622 npm warn EBADENGINE Unsupported engine {
+#7 0.622 npm warn EBADENGINE   package: 'movielinks-landing@0.0.0',
+#7 0.622 npm warn EBADENGINE   required: { node: '20.9.0' },
+#7 0.622 npm warn EBADENGINE   current: { node: 'v20.19.0', npm: '10.8.2' }
+#7 0.622 npm warn EBADENGINE }
+#7 1.850 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+#7 2.380 npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+#7 2.708 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+#7 7.733 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#7 8.269 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#7 23.44 
+#7 23.44 added 855 packages, and audited 856 packages in 23s
+#7 23.44 
+#7 23.44 131 packages are looking for funding
+#7 23.44   run `npm fund` for details
+#7 23.66 
+#7 23.66 60 vulnerabilities (2 low, 14 moderate, 40 high, 4 critical)
+#7 23.66 
+#7 23.66 To address all issues, run:
+#7 23.66   npm audit fix
+#7 23.66 
+#7 23.66 Run `npm audit` for details.
+#7 23.66 npm notice
+#7 23.66 npm notice New major version of npm available! 10.8.2 -> 12.0.2
+#7 23.66 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+#7 23.66 npm notice To update run: npm install -g npm@12.0.2
+#7 23.66 npm notice
+#7 DONE 24.0s
+
+#8 [builder 1/3] COPY --from=deps /usr/src/app/node_modules ./node_modules
+#8 DONE 2.1s
+
+#9 [prod-deps 2/3] COPY package*.json ./
+#9 DONE 0.2s
+
+#10 [builder 2/3] COPY . .
+#10 DONE 0.3s
+
+#11 [prod-deps 3/3] RUN npm prune --omit=dev
+#11 0.531 npm warn EBADENGINE Unsupported engine {
+#11 0.531 npm warn EBADENGINE   package: 'movielinks-landing@0.0.0',
+#11 0.531 npm warn EBADENGINE   required: { node: '20.9.0' },
+#11 0.531 npm warn EBADENGINE   current: { node: 'v20.19.0', npm: '10.8.2' }
+#11 0.531 npm warn EBADENGINE }
+#11 ...
+
+#12 [builder 3/3] RUN npm run build
+#12 0.256 
+#12 0.256 > movielinks-landing@0.0.0 build
+#12 0.256 > ng build
+#12 0.256 
+#12 0.591 ❯ Building...
+#12 11.48 ✔ Building...
+#12 11.48 Browser bundles      
+#12 11.48 Initial chunk files   | Names            |  Raw size | Estimated transfer size
+#12 11.48 main-W5SZPBE2.js      | main             | 847.27 kB |               173.09 kB
+#12 11.48 polyfills-5CFQRCPP.js | polyfills        |  34.59 kB |                11.33 kB
+#12 11.48 styles-QWAOLXIR.css   | styles           |   5.51 kB |                 1.30 kB
+#12 11.48 
+#12 11.48                       | Initial total    | 887.37 kB |               185.72 kB
+#12 11.48 
+#12 11.48 
+#12 11.48 Server bundles       
+#12 11.48 Initial chunk files   | Names            |  Raw size
+#12 11.48 server.mjs            | server           |   1.38 MB |                        
+#12 11.48 main.server.mjs       | main.server      |   1.30 MB |                        
+#12 11.48 polyfills.server.mjs  | polyfills.server | 265.26 kB |                        
+#12 11.48 chunk-X2SEQXRR.mjs    | -                |   2.41 kB |                        
+#12 11.48 chunk-K6PEOWAE.mjs    | -                |   1.35 kB |                        
+#12 11.48 
+#12 11.48 Lazy chunk files      | Names            |  Raw size
+#12 11.48 chunk-NCLP4WXI.mjs    | xhr2             |  12.18 kB |                        
+#12 11.48 chunk-ZBYV3YBF.mjs    | xhr2             |  12.08 kB |                        
+#12 11.48 
+#12 11.48 Prerendered 67 static routes.
+#12 11.48 Application bundle generation complete. [10.891 seconds] - 2026-09-20T13:44:25.112Z
+#12 11.48 
+#12 11.53 ▲ [WARNING] Unable to initialize JavaScript cache storage. [plugin angular-compiler]
+#12 11.53 
+#12 11.53   Cannot find module 'lmdb'
+#12 11.53   This will not affect the build output content but may result in slower builds.
+#12 11.53 
+#12 11.53 
+#12 11.53 ▲ [WARNING] Unable to initialize JavaScript cache storage. [plugin angular-compiler]
+#12 11.53 
+#12 11.53   Cannot find module 'lmdb'
+#12 11.53   This will not affect the build output content but may result in slower builds.
+#12 11.53 
+#12 11.53 
+#12 11.53 ▲ [WARNING] Unable to initialize JavaScript cache storage. [plugin angular-compiler]
+#12 11.53 
+#12 11.53   Cannot find module 'lmdb'
+#12 11.53   This will not affect the build output content but may result in slower builds.
+#12 11.53 
+#12 11.53 
+#12 11.53 Output location: /usr/src/app/dist/movielinks-landing
+#12 11.53 
+#12 11.62 npm notice
+#12 11.62 npm notice New major version of npm available! 10.8.2 -> 12.0.2
+#12 11.62 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+#12 11.62 npm notice To update run: npm install -g npm@12.0.2
+#12 11.62 npm notice
+#12 ...
+
+#11 [prod-deps 3/3] RUN npm prune --omit=dev
+#11 11.62 
+#11 11.62 up to date, audited 438 packages in 11s
+#11 11.62 
+#11 11.62 85 packages are looking for funding
+#11 11.62   run `npm fund` for details
+#11 11.79 
+#11 11.79 32 vulnerabilities (1 low, 8 moderate, 20 high, 3 critical)
+#11 11.79 
+#11 11.79 To address all issues, run:
+#11 11.79   npm audit fix
+#11 11.79 
+#11 11.79 Run `npm audit` for details.
+#11 11.85 npm notice
+#11 11.85 npm notice New major version of npm available! 10.8.2 -> 12.0.2
+#11 11.85 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+#11 11.85 npm notice To update run: npm install -g npm@12.0.2
+#11 11.85 npm notice
+#11 ...
+
+#12 [builder 3/3] RUN npm run build
+#12 DONE 12.0s
+
+#11 [prod-deps 3/3] RUN npm prune --omit=dev
+#11 DONE 12.1s
+
+#13 [production 1/2] COPY --chown=node:node --from=prod-deps /usr/src/app/node_modules ./node_modules
+#13 DONE 1.4s
+
+#14 [production 2/2] COPY --chown=node:node --from=builder /usr/src/app/dist ./dist
+#14 DONE 0.2s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 8.3s done
+#15 exporting manifest sha256:68afb3377b50cd693e61f1c54fc0194f5edeba69040397dada554a626b1561c1
+#15 exporting manifest sha256:68afb3377b50cd693e61f1c54fc0194f5edeba69040397dada554a626b1561c1 done
+#15 exporting config sha256:d165cf82469a5ed3c883639976b5c2debbf1f56c5696999db295b9141b36a35c done
+#15 exporting attestation manifest sha256:2ce208f2cb9f5de44feb37954456248550f9e0b325d628e23cadc0c8ed910339 done
+#15 exporting manifest list sha256:b1e45121240d322012c7a29b511a1dab92e56f10e283531b2b4a23f03e155b57 done
+#15 naming to docker.io/library/movielinks-landing:peex-local done
+#15 unpacking to docker.io/library/movielinks-landing:peex-local
+#15 unpacking to docker.io/library/movielinks-landing:peex-local 3.2s done
+#15 naming to docker.io/library/movielinks-landing:2339ad4 done
+#15 unpacking to docker.io/library/movielinks-landing:2339ad4 done
+#15 DONE 11.6s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ahtk1fen31uoo34uha19fznt2
+
+$ docker images movielinks-landing
+REPOSITORY           TAG          IMAGE ID       CREATED          SIZE
+movielinks-landing   2339ad4      b1e45121240d   11 seconds ago   1.09GB
+movielinks-landing   peex-local   b1e45121240d   11 seconds ago   1.09GB
+
+BUILD DONE: movielinks-landing:peex-local

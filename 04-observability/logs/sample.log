@@ -1,0 +1,35 @@
+2026-09-16T09:59:58Z INFO api service starting version=1.4.2
+2026-09-16T10:00:00Z INFO api request handled path=/health status=200 dur=2ms
+2026-09-16T10:00:01Z INFO api request handled path=/api/orders status=200 dur=41ms
+2026-09-16T10:00:03Z DEBUG cache lookup key=orders:42 hit=true
+2026-09-16T10:00:04Z INFO api request handled path=/api/orders status=200 dur=38ms
+2026-09-16T10:00:06Z WARN api slow downstream service=payments dur=812ms
+2026-09-16T10:00:07Z INFO api request handled path=/api/users status=200 dur=19ms
+2026-09-16T10:00:09Z ERROR api upstream timeout service=payments status=504
+2026-09-16T10:00:10Z INFO api request handled path=/api/users status=200 dur=22ms
+2026-09-16T10:00:12Z DEBUG cache lookup key=users:7 hit=false
+2026-09-16T10:00:13Z WARN db connection pool near limit used=18 max=20
+2026-09-16T10:00:15Z ERROR api upstream timeout service=payments status=504
+2026-09-16T10:00:16Z INFO api request handled path=/api/orders status=200 dur=44ms
+2026-09-16T10:00:18Z ERROR db query failed code=deadlock status=500
+2026-09-16T10:00:19Z INFO api request handled path=/health status=200 dur=1ms
+2026-09-16T10:00:21Z INFO api request handled path=/api/orders status=201 dur=63ms
+2026-09-16T10:00:22Z WARN auth token nearing expiry sub=svc-report
+2026-09-16T10:00:24Z INFO api request handled path=/api/users status=200 dur=17ms
+2026-09-16T10:00:25Z ERROR api unhandled exception path=/api/report status=500
+2026-09-16T10:00:27Z INFO api request handled path=/api/orders status=200 dur=40ms
+2026-09-16T10:00:28Z DEBUG cache evict key=orders:1 reason=ttl
+2026-09-16T10:00:30Z INFO api request handled path=/api/users status=404 dur=9ms
+2026-09-16T10:00:31Z WARN api slow downstream service=payments dur=903ms
+2026-09-16T10:00:33Z ERROR api upstream timeout service=payments status=504
+2026-09-16T10:00:34Z INFO api request handled path=/api/orders status=200 dur=37ms
+2026-09-16T10:00:36Z INFO api request handled path=/health status=200 dur=2ms
+2026-09-16T10:00:37Z DEBUG cache lookup key=orders:99 hit=true
+2026-09-16T10:00:39Z ERROR db query failed code=deadlock status=500
+2026-09-16T10:00:40Z INFO api request handled path=/api/users status=200 dur=20ms
+2026-09-16T10:00:42Z WARN db connection pool near limit used=19 max=20
+2026-09-16T10:00:43Z INFO api request handled path=/api/orders status=200 dur=39ms
+2026-09-16T10:00:45Z INFO api request handled path=/api/users status=200 dur=18ms
+2026-09-16T10:00:46Z ERROR api unhandled exception path=/api/report status=500
+2026-09-16T10:00:48Z INFO api request handled path=/health status=200 dur=1ms
+2026-09-16T10:00:49Z INFO api graceful shutdown signal=SIGTERM

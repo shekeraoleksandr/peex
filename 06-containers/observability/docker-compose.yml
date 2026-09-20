@@ -1,0 +1,145 @@
+# Container observability stack for the AWS monitoring instance (11-network).
+#
+# Port bindings: only Prometheus (9090) and Grafana (3000) are published on all
+# interfaces, because those are the only two ports the security group opens to
+# your IP. Everything else binds to 127.0.0.1 and is reached over an SSH tunnel
+# -- no security-group changes, no extra internet-facing surface.
+services:
+
+  # ---------------- METRICS ----------------
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: peex_prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      # Retention is capped deliberately: this is a demo instance on a t3.micro,
+      # and unbounded TSDB growth would fill the root volume.
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=2GB
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  # Per-container CPU / memory / network / disk metrics.
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: peex_cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
+
+  # Host-level metrics for the monitoring instance itself.
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: peex_node_exporter
+    command:
+      - --path.rootfs=/host
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "127.0.0.1:9100:9100"
+    restart: unless-stopped
+
+  # HTTP probes -> availability + latency (the "readiness/liveness" signal
+  # for workloads that don't expose Prometheus metrics themselves).
+  blackbox:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: peex_blackbox
+    command:
+      - --config.file=/etc/blackbox/blackbox.yml
+    volumes:
+      - ./blackbox:/etc/blackbox:ro
+    ports:
+      - "127.0.0.1:9115:9115"
+    restart: unless-stopped
+
+  # ---------------- LOGS ----------------
+  loki:
+    image: grafana/loki:2.9.10
+    container_name: peex_loki
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+    restart: unless-stopped
+
+  # Ships every container's stdout/stderr to Loki (centralized log aggregation).
+  promtail:
+    image: grafana/promtail:2.9.10
+    container_name: peex_promtail
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # ---------------- ALERTING ----------------
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: peex_alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    volumes:
+      - ./alertmanager:/etc/alertmanager:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "127.0.0.1:9093:9093"
+    restart: unless-stopped
+
+  # The automated process an alert triggers: records every firing/resolved
+  # alert so the trigger -> action chain is verifiable.
+  webhook-sink:
+    image: python:3.12-alpine
+    container_name: peex_webhook_sink
+    command: python /app/sink.py
+    volumes:
+      - ./webhook:/app:ro
+      - webhook_data:/data
+    ports:
+      - "127.0.0.1:5001:5001"
+    restart: unless-stopped
+
+  # ---------------- VISUALIZATION ----------------
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: peex_grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-peexdemo123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  loki_data:
+  alertmanager_data:
+  grafana_data:
+  webhook_data:

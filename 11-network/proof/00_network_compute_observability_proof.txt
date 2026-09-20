@@ -1,0 +1,256 @@
+### NETWORK + COMPUTE + OBSERVABILITY PROOF @ 2026-09-20 12:25:33 UTC
+vpc=vpc-063dc7c8d30f6ee63  web=32.196.140.165 (10.42.1.10)  monitoring=44.204.182.130
+
+===== VPC / subnet / route table =====
+vpc-063dc7c8d30f6ee63	10.42.0.0/16	available
+subnet-02579a59530bd9b5e	10.42.1.0/24	us-east-1a	True
+subnet-0c39cbdcf5bd72ba5	10.42.2.0/24	us-east-1b	True
+subnet-07f7ad4a33b1eccce	10.42.10.0/24	us-east-1a	False
+10.42.0.0/16	local
+10.42.0.0/16	local
+0.0.0.0/0	None
+None	vpce-03814e0db4487448d
+10.42.0.0/16	local
+0.0.0.0/0	igw-0309f69f7766d7cb5
+None	vpce-03814e0db4487448d
+
+===== Security groups (the firewall) =====
+peex-netcompute-web-sg	Web/app instance: SSH+HTTP from allowed_cidr only; node_exporter only from the monitoring SG
+peex-netcompute-nat-sg	NAT instance: accepts traffic from the private subnet, forwards it out
+default	default VPC security group
+peex-netcompute-private-sg	Private-subnet workload: reachable only from inside the VPC, egress only via NAT
+peex-netcompute-monitoring-sg	Monitoring instance: SSH+Grafana+Prometheus from allowed_cidr only
+-- web SG rules --
+[
+    {
+        "IpProtocol": "tcp",
+        "FromPort": 80,
+        "ToPort": 80,
+        "UserIdGroupPairs": [],
+        "IpRanges": [
+            {
+                "Description": "nginx demo app, from the operator IP only (not public)",
+                "CidrIp": "109.108.78.23/32"
+            }
+        ],
+        "Ipv6Ranges": [],
+        "PrefixListIds": []
+    },
+    {
+        "IpProtocol": "tcp",
+        "FromPort": 22,
+        "ToPort": 22,
+        "UserIdGroupPairs": [],
+        "IpRanges": [
+            {
+                "Description": "SSH for administration, from the operator IP only",
+                "CidrIp": "109.108.78.23/32"
+            }
+        ],
+        "Ipv6Ranges": [],
+        "PrefixListIds": []
+    },
+    {
+        "IpProtocol": "icmp",
+        "FromPort": -1,
+        "ToPort": -1,
+        "UserIdGroupPairs": [],
+        "IpRanges": [
+            {
+                "Description": "ICMP/SSH from the peered VPC over the private link",
+                "CidrIp": "10.43.0.0/16"
+            }
+        ],
+        "Ipv6Ranges": [],
+        "PrefixListIds": []
+    },
+    {
+        "IpProtocol": "tcp",
+        "FromPort": 9100,
+        "ToPort": 9100,
+        "UserIdGroupPairs": [
+            {
+                "Description": "node_exporter scrape, from the monitoring instance only",
+                "UserId": "991246619778",
+                "GroupId": "sg-0282ce07deaf5d58c"
+            }
+        ],
+        "IpRanges": [],
+        "Ipv6Ranges": [],
+        "PrefixListIds": []
+    }
+]
+-- monitoring SG rules --
+[
+    {
+        "IpProtocol": "tcp",
+        "FromPort": 22,
+        "ToPort": 22,
+        "UserIdGroupPairs": [],
+        "IpRanges": [
+            {
+                "Description": "SSH for administration, from the operator IP only",
+                "CidrIp": "109.108.78.23/32"
+            }
+        ],
+        "Ipv6Ranges": [],
+        "PrefixListIds": []
+    },
+    {
+        "IpProtocol": "tcp",
+        "FromPort": 9090,
+        "ToPort": 9090,
+        "UserIdGroupPairs": [],
+        "IpRanges": [
+            {
+                "Description": "Prometheus UI, from the operator IP only",
+                "CidrIp": "109.108.78.23/32"
+            }
+        ],
+        "Ipv6Ranges": [],
+        "PrefixListIds": []
+    },
+    {
+        "IpProtocol": "tcp",
+        "FromPort": 3000,
+        "ToPort": 3000,
+        "UserIdGroupPairs": [],
+        "IpRanges": [
+            {
+                "Description": "Grafana UI, from the operator IP only",
+                "CidrIp": "109.108.78.23/32"
+            }
+        ],
+        "Ipv6Ranges": [],
+        "PrefixListIds": []
+    }
+]
+
+===== EC2 instances =====
+peex-netcompute-nat	i-023614ce422506405	t3.micro	10.42.1.118	100.54.41.112	running
+peex-netcompute-monitoring	i-0c3e86e0dfdd5731c	t3.micro	10.42.1.193	44.204.182.130	running
+peex-netcompute-private-host	i-02b67ca1cd7d2232d	t3.micro	10.42.10.10	None	running
+peex-netcompute-web	i-06f913b6bab4ed972	t3.micro	10.42.1.10	32.196.140.165	running
+
+===== Web instance: nginx + node_exporter (over SSH) =====
+-- systemctl nginx --
+active
+enabled
+-- systemctl node_exporter --
+active
+enabled
+-- node_exporter local curl --
+# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 2.8273e-05
+go_gc_duration_seconds{quantile="0.25"} 3.9543e-05
+go_gc_duration_seconds{quantile="0.5"} 4.2575e-05
+
+===== Web instance reachable from the internet (nginx on 80) =====
+HTTP/1.1 200 OK
+Server: nginx/1.24.0 (Ubuntu)
+Date: Sun, 20 Sep 2026 12:25:42 GMT
+Content-Type: text/html
+Content-Length: 200
+Last-Modified: Sun, 20 Sep 2026 11:42:52 GMT
+Connection: keep-alive
+ETag: "6aafc6bc-c8"
+Accept-Ranges: bytes
+
+<html><body>
+<h1>PeEx demo — web instance</h1>
+<p>host: ip-10-42-1-10.ec2.internal</p>
+<p>provisioned by Terraform, inside a private VPC subnet, behind a security-group firewall.</p>
+</body></html>
+
+===== Firewall proof: node_exporter (9100) is NOT reachable from the internet =====
+(expected: times out / refused -- it's only open to the monitoring instance's SG)
+confirmed: blocked from the internet (curl exit 28; 28=timed out, 7=refused -- both mean the SG dropped it)
+-- for contrast, the same port IS reachable from the monitoring instance --
+# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 2.8273e-05
+curl: (23) Failure writing output to destination
+
+===== Monitoring instance: docker + prometheus + grafana (over SSH) =====
+-- running containers --
+NAMES        IMAGE                     STATUS          PORTS
+prometheus   prom/prometheus:v2.54.1   Up 42 minutes   0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
+grafana      grafana/grafana:11.2.0    Up 42 minutes   0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+-- cloud-init tail --
+==> containers now running:
+NAMES        IMAGE                     STATUS                  PORTS
+prometheus   prom/prometheus:v2.54.1   Up Less than a second   0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
+grafana      grafana/grafana:11.2.0    Up Less than a second   0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+monitoring user-data DONE
+
+===== Prometheus targets (web-instance should be UP, scraped over the private VPC IP) =====
+{
+    "status": "success",
+    "data": {
+        "activeTargets": [
+            {
+                "discoveredLabels": {
+                    "__address__": "localhost:9090",
+                    "__metrics_path__": "/metrics",
+                    "__scheme__": "http",
+                    "__scrape_interval__": "15s",
+                    "__scrape_timeout__": "10s",
+                    "job": "prometheus"
+                },
+                "labels": {
+                    "instance": "localhost:9090",
+                    "job": "prometheus"
+                },
+                "scrapePool": "prometheus",
+                "scrapeUrl": "http://localhost:9090/metrics",
+                "globalUrl": "http://c661572264c2:9090/metrics",
+                "lastError": "",
+                "lastScrape": "2026-09-20T12:25:47.210538454Z",
+                "lastScrapeDuration": 0.00517284,
+                "health": "up",
+                "scrapeInterval": "15s",
+                "scrapeTimeout": "10s"
+            },
+            {
+                "discoveredLabels": {
+                    "__address__": "10.42.1.10:9100",
+                    "__metrics_path__": "/metrics",
+                    "__scheme__": "http",
+                    "__scrape_interval__": "15s",
+                    "__scrape_timeout__": "10s",
+                    "instance_role": "web",
+                    "job": "web-instance"
+                },
+                "labels": {
+                    "instance": "10.42.1.10:9100",
+                    "instance_role": "web",
+                    "job": "web-instance"
+                },
+                "scrapePool": "web-instance",
+                "scrapeUrl": "http://10.42.1.10:9100/metrics",
+                "globalUrl": "http://10.42.1.10:9100/metrics",
+                "lastError": "",
+                "lastScrape": "2026-09-20T12:25:46.609665254Z",
+                "lastScrapeDuration": 0.013083172,
+                "health": "up",
+                "scrapeInterval": "15s",
+                "scrapeTimeout": "10s"
+            }
+        ],
+        "droppedTargets": [],
+        "droppedTargetCounts": {
+            "prometheus": 0,
+            "web-instance": 0
+        }
+    }
+}
+
+===== Grafana health =====
+{
+  "database": "ok",
+  "version": "11.2.0",
+  "commit": "2a88694fd3ced0335bf3726cc5d0adc2d1858855"
+}
+
+PROOF DONE

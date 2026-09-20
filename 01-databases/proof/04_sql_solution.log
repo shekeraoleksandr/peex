@@ -1,0 +1,69 @@
+==> [Middle] Configure & maintain SQL-based solution
+-- Table structure with constraints:
+$ $PSQL -c "\d employees"
+                                 Table "public.employees"
+  Column   |     Type      | Collation | Nullable |                Default                
+-----------+---------------+-----------+----------+---------------------------------------
+ id        | integer       |           | not null | nextval('employees_id_seq'::regclass)
+ full_name | text          |           | not null | 
+ email     | text          |           | not null | 
+ dept_id   | integer       |           | not null | 
+ salary    | numeric(10,2) |           | not null | 
+ hired_at  | date          |           | not null | CURRENT_DATE
+Indexes:
+    "employees_pkey" PRIMARY KEY, btree (id)
+    "employees_email_key" UNIQUE CONSTRAINT, btree (email)
+    "idx_employees_dept" btree (dept_id)
+    "idx_employees_salary" btree (salary)
+Check constraints:
+    "employees_salary_check" CHECK (salary > 0::numeric)
+Foreign-key constraints:
+    "employees_dept_id_fkey" FOREIGN KEY (dept_id) REFERENCES departments(id)
+
+-- Configured indexes:
+$ $PSQL -c "SELECT indexname, indexdef FROM pg_indexes WHERE tablename='employees';"
+      indexname       |                                    indexdef                                     
+----------------------+---------------------------------------------------------------------------------
+ employees_pkey       | CREATE UNIQUE INDEX employees_pkey ON public.employees USING btree (id)
+ employees_email_key  | CREATE UNIQUE INDEX employees_email_key ON public.employees USING btree (email)
+ idx_employees_dept   | CREATE INDEX idx_employees_dept ON public.employees USING btree (dept_id)
+ idx_employees_salary | CREATE INDEX idx_employees_salary ON public.employees USING btree (salary)
+(4 rows)
+
+-- Schema backup via pg_dump (maintenance task):
+$ docker compose exec -T postgres pg_dump -U peex_admin -d company --schema-only | head -35
+--
+-- PostgreSQL database dump
+--
+
+\restrict djxdd69OyHgGo3yG7F6g1AOP3LeJCMGZt6GuKmUZpWlqKnk9iFBeooSJI7gIOSH
+
+-- Dumped from database version 16.15
+-- Dumped by pg_dump version 16.15
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: departments; Type: TABLE; Schema: public; Owner: peex_admin
+--
+
+CREATE TABLE public.departments (
+    id integer NOT NULL,
+    name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+

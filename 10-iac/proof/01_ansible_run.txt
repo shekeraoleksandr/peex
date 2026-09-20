@@ -1,0 +1,115 @@
+########## RUN 1 (expect changed) ##########
+
+PLAY [PeEx IaC — configure demo app] *******************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Host 'localhost' is using the discovered Python interpreter at '/usr/bin/python3.13', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.19/reference_appendices/interpreter_discovery.html for more information.
+ok: [localhost]
+
+TASK [Ensure base directory exists] ********************************************
+changed: [localhost]
+
+TASK [Render application configuration from template] **************************
+changed: [localhost]
+
+TASK [Manage a hosts-style entry (declarative, idempotent)] ********************
+changed: [localhost]
+
+TASK [Show the effective configuration] ****************************************
+ok: [localhost]
+
+TASK [Report] ******************************************************************
+ok: [localhost] => {
+    "msg": "config CHANGED; env=dev port=8080 max_conn=100"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+########## RUN 2 (expect idempotent: changed=0) ##########
+
+PLAY [PeEx IaC — configure demo app] *******************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Host 'localhost' is using the discovered Python interpreter at '/usr/bin/python3.13', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.19/reference_appendices/interpreter_discovery.html for more information.
+ok: [localhost]
+
+TASK [Ensure base directory exists] ********************************************
+ok: [localhost]
+
+TASK [Render application configuration from template] **************************
+ok: [localhost]
+
+TASK [Manage a hosts-style entry (declarative, idempotent)] ********************
+ok: [localhost]
+
+TASK [Show the effective configuration] ****************************************
+ok: [localhost]
+
+TASK [Report] ******************************************************************
+ok: [localhost] => {
+    "msg": "config unchanged; env=dev port=8080 max_conn=100"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+########## CONFIG CHANGE: -e app_port=9090 (template changes) ##########
+
+PLAY [PeEx IaC — configure demo app] *******************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Host 'localhost' is using the discovered Python interpreter at '/usr/bin/python3.13', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.19/reference_appendices/interpreter_discovery.html for more information.
+ok: [localhost]
+
+TASK [Ensure base directory exists] ********************************************
+ok: [localhost]
+
+TASK [Render application configuration from template] **************************
+changed: [localhost]
+
+TASK [Manage a hosts-style entry (declarative, idempotent)] ********************
+ok: [localhost]
+
+TASK [Show the effective configuration] ****************************************
+ok: [localhost]
+
+TASK [Report] ******************************************************************
+ok: [localhost] => {
+    "msg": "config CHANGED; env=dev port=9090 max_conn=100"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+########## RUN after change (idempotent again: changed=0) ##########
+
+PLAY [PeEx IaC — configure demo app] *******************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Host 'localhost' is using the discovered Python interpreter at '/usr/bin/python3.13', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.19/reference_appendices/interpreter_discovery.html for more information.
+ok: [localhost]
+
+TASK [Ensure base directory exists] ********************************************
+ok: [localhost]
+
+TASK [Render application configuration from template] **************************
+ok: [localhost]
+
+TASK [Manage a hosts-style entry (declarative, idempotent)] ********************
+ok: [localhost]
+
+TASK [Show the effective configuration] ****************************************
+ok: [localhost]
+
+TASK [Report] ******************************************************************
+ok: [localhost] => {
+    "msg": "config unchanged; env=dev port=9090 max_conn=100"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

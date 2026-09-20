@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Run the locally built image with port forwarding and prove it serves traffic.
+source "$(cd "$(dirname "$0")/.." && pwd)/lib.sh"
+require docker
+
+{
+echo "### RUN (port forwarding) @ $(date -u '+%F %T UTC')"
+echo "image=$LOCAL_IMAGE  host port=$HOST_PORT -> container port=$CONTAINER_PORT"
+
+note "docker rm -f $CONTAINER_NAME   # clean any previous run"
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || echo "(nothing to remove)"
+
+note "docker run -d --name $CONTAINER_NAME -p $HOST_PORT:$CONTAINER_PORT -e PORT=$CONTAINER_PORT $LOCAL_IMAGE"
+docker run -d --name "$CONTAINER_NAME" \
+    -p "$HOST_PORT:$CONTAINER_PORT" \
+    -e PORT="$CONTAINER_PORT" \
+    "$LOCAL_IMAGE"
+
+echo
+echo "-- waiting for the SSR server to accept connections --"
+ok=""
+for i in $(seq 1 30); do
+    if curl -fsS -m 3 "http://localhost:$HOST_PORT/" >/dev/null 2>&1; then
+        ok=1; echo "   up after ${i}s"; break
+    fi
+    sleep 1
+done
+
+note "docker ps --filter name=$CONTAINER_NAME"
+docker ps --filter "name=$CONTAINER_NAME" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+
+if [ -n "$ok" ]; then
+    note "curl -i http://localhost:$HOST_PORT/   # port forwarding works"
+    curl -sS -i -m 10 "http://localhost:$HOST_PORT/" | head -25
+    echo
+    echo "-- page title served by the container --"
+    curl -sS -m 10 "http://localhost:$HOST_PORT/" | grep -o '<title>[^<]*</title>' | head -1 || true
+else
+    echo
+    echo "WARN: no HTTP 200 within 30s -- container logs below should say why"
+fi
+
+note "docker logs --tail 25 $CONTAINER_NAME"
+docker logs --tail 25 "$CONTAINER_NAME" 2>&1 || true
+
+echo
+echo "RUN DONE (container left running -- 'docker rm -f $CONTAINER_NAME' to stop)"
+} 2>&1 | tee "$PROOF/02_run.txt"
+echo "==> Wrote $PROOF/02_run.txt"
+echo "==> Open http://localhost:$HOST_PORT/ in a browser for a visual screenshot"

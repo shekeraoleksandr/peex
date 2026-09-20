@@ -1,0 +1,47 @@
+# SUGGESTED .dockerignore for movieLinks-landing
+#
+# NOT APPLIED -- the MovieLinks repo is treated as read-only by this kit.
+# To adopt it in the real project:
+#     cp recommendations/dockerignore.suggested ../../MovieLinks/movieLinks-landing/.dockerignore
+#
+# Why: movieLinks-landing currently has no .dockerignore, so `docker build .`
+# ships the entire working tree (~947MB: node_modules 606M, dist 128M,
+# .git 92M) as build context, and `COPY . .` in the builder stage bakes it
+# into that layer. With this file the context drops to the source that is
+# actually needed for `npm ci && ng build`.
+#
+# (This kit's build.sh sidesteps the problem without touching the repo, by
+# piping `git archive HEAD` in as the build context.)
+
+# dependencies -- reinstalled inside the image by `npm ci`
+node_modules
+**/node_modules
+
+# build output -- regenerated inside the image by `npm run build`
+dist
+.angular
+*.tsbuildinfo
+
+# version control / CI
+.git
+.gitignore
+.github
+
+# local env & editor noise
+.env
+.env.*
+.vscode
+.idea
+.DS_Store
+
+# logs & caches
+*.log
+npm-debug.log*
+.npm
+coverage
+
+# docs & container config not needed at build time
+README.md
+CLAUDE.md
+Dockerfile
+.dockerignore

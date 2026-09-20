@@ -1,0 +1,8 @@
+# Never commit Terraform state (may contain secrets) or local provider cache
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl

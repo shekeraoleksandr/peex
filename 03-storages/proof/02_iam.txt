@@ -1,0 +1,52 @@
+### IAM SETUP @ 2026-09-19 10:55:23 UTC  account=991246619778
+
+== Create/Update policies ==
+== Create/Update roles and attach policies ==
+
+== Read-only policy document ==
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListBucket",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::peex-storage-demo-991246619778"
+    },
+    {
+      "Sid": "ReadObjects",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:GetObjectVersion"],
+      "Resource": "arn:aws:s3:::peex-storage-demo-991246619778/*"
+    }
+  ]
+}
+== Read-write policy document ==
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListBucket",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::peex-storage-demo-991246619778"
+    },
+    {
+      "Sid": "ReadWriteObjects",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:GetObjectVersion", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::peex-storage-demo-991246619778/*"
+    }
+  ]
+}
+
+== Roles ==
+peex-s3-readonly-role	arn:aws:iam::991246619778:role/peex-s3-readonly-role
+peex-s3-readwrite-role	arn:aws:iam::991246619778:role/peex-s3-readwrite-role
+== Attached policies ==
+RO:
+ATTACHEDPOLICIES	arn:aws:iam::991246619778:policy/peex-s3-readonly	peex-s3-readonly
+RW:
+ATTACHEDPOLICIES	arn:aws:iam::991246619778:policy/peex-s3-readwrite	peex-s3-readwrite
+
+IAM SETUP DONE

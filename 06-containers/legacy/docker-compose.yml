@@ -1,0 +1,28 @@
+services:
+  app:
+    build: .
+    image: peex-app:1.0.0
+    container_name: peex_app
+    env_file:
+      - config/app.env
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    # Resource limits (observability / capacity practice)
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+    # Log rotation so container logs don't grow unbounded
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/healthz').status==200 else 1)"]
+      interval: 15s
+      timeout: 3s
+      start_period: 5s
+      retries: 3

@@ -1,0 +1,20 @@
+== Editor configuration present ==
+  /root/peex-build/09-automation-scripting/ide/.editorconfig
+  /root/peex-build/09-automation-scripting/ide/.pre-commit-config.yaml
+  /root/peex-build/09-automation-scripting/ide/.vscode/extensions.json
+  /root/peex-build/09-automation-scripting/ide/.vscode/settings.json
+
+== Toolchain ==
+  [ok]      bash         GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)
+  [ok]      git          git version 2.43.0
+  [ok]      python3      Python 3.11.15
+  [ok]      shellcheck   ShellCheck - shell script analysis tool
+  [missing] shfmt        (install: brew install shfmt / go install mvdan.cc/sh/v3/cmd/shfmt@latest)
+  [missing] pre-commit   (install: pip install pre-commit)
+
+== Python virtual environment ==
+  created /root/peex-build/09-automation-scripting/ide/.venv
+  activated: Python 3.11.15
+
+Dev environment ready. In VS Code, open this folder and accept the
+recommended extensions (.vscode/extensions.json) for lint/format on save.

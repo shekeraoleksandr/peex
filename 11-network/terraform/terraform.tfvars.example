@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars and fill in, OR export as TF_VAR_allowed_cidr /
+# pass -var on the command line. ../scripts/apply.sh auto-detects your IP if
+# you skip this entirely.
+
+region       = "us-east-1"
+allowed_cidr = "203.0.113.10/32" # YOUR public IP/32 -- get it with ../scripts/get-my-ip.sh

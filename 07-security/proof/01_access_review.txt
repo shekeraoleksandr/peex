@@ -1,0 +1,63 @@
+===============================================================
+ User access review  —  host: vm  —  2026-09-16 13:25:27 UTC
+===============================================================
+[1] Login-capable accounts (shell is not nologin/false)
+-------------------------------------------------------------
+  root               uid=0      gid=0      shell=/bin/bash
+  sync               uid=4      gid=65534  shell=/bin/sync
+  ubuntu             uid=1000   gid=1000   shell=/bin/bash
+  postgres           uid=102    gid=104    shell=/bin/bash
+  claude             uid=999    gid=1001   shell=/bin/bash
+
+[2] UID 0 accounts (must be ONLY root)
+-------------------------------------------------------------
+  root
+
+[3] Members of privileged groups (sudo / wheel / admin / root)
+-------------------------------------------------------------
+  sudo     : ubuntu
+  root     : <none>
+
+[4] Accounts with SSH authorized_keys
+-------------------------------------------------------------
+  (none readable — re-run with sudo to inspect all homes)
+
+[5] Password/lock status (requires root; from /etc/shadow)
+-------------------------------------------------------------
+  locked/no-login: root
+  locked/no-login: daemon
+  locked/no-login: bin
+  locked/no-login: sys
+  locked/no-login: sync
+  locked/no-login: games
+  locked/no-login: man
+  locked/no-login: lp
+  locked/no-login: mail
+  locked/no-login: news
+  locked/no-login: uucp
+  locked/no-login: proxy
+  locked/no-login: www-data
+  locked/no-login: backup
+  locked/no-login: list
+  locked/no-login: irc
+  locked/no-login: _apt
+  locked/no-login: nobody
+  locked/no-login: ubuntu
+  locked/no-login: systemd-network
+  locked/no-login: messagebus
+  locked/no-login: redis
+  locked/no-login: postgres
+  locked/no-login: polkitd
+  locked/no-login: claude
+  locked/no-login: peexweb
+  locked/no-login: sshd
+
+[6] Sudoers NOPASSWD / broad grants
+-------------------------------------------------------------
+  /etc/sudoers:47:root	ALL=(ALL:ALL) ALL
+  /etc/sudoers:50:%admin ALL=(ALL) ALL
+  /etc/sudoers:53:%sudo	ALL=(ALL:ALL) ALL
+  /etc/sudoers:58:claude ALL=(ALL) NOPASSWD: ALL
+
+Review complete. Share this output with the security owner and confirm
+each login-capable / privileged account still needs its access (least privilege).

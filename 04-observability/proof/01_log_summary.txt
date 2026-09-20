@@ -1,0 +1,30 @@
+===================================================
+ Log summary: /root/peex-build/04-observability/logs/sample.log
+ Generated:   2026-09-16 13:00:34 UTC
+===================================================
+Total entries: 35
+
+-- Entries by level --
+     19  INFO
+      7  ERROR
+      5  WARN
+      4  DEBUG
+
+Error rate: 7/35 = 20.0%
+
+-- Time span --
+First entry: 2026-09-16T09:59:58Z
+Last entry:  2026-09-16T10:00:49Z
+
+-- Top 5 ERROR messages --
+      3 api upstream timeout service=payments status=504
+      2 db query failed code=deadlock status=500
+      2 api unhandled exception path=/api/report status=500
+
+-- HTTP status distribution --
+     15 status=200
+      4 status=500
+      3 status=504
+      1 status=404
+      1 status=201
+5xx server errors: 7

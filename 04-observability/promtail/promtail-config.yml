@@ -1,0 +1,63 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+# Two independent log sources are aggregated here: the host's own system logs
+# and every container's stdout/stderr. Both get the same redaction treatment.
+#
+# REDACTION HAPPENS AT INGEST, not at query time. A secret filtered only when
+# someone runs a query has already been written to Loki's chunks and is sitting
+# on disk; filtering here means it is never stored at all.
+scrape_configs:
+  # ---- Source 1: host system logs -----------------------------------------
+  - job_name: system
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: varlogs
+          host: peex
+          __path__: /var/log/*log
+    pipeline_stages:
+      - replace:
+          expression: '(?i)(password|passwd|secret|token|api[_-]?key|authorization)["\s:=]+([^\s",}]+)'
+          replace: '${1}=***REDACTED***'
+      - replace:
+          expression: '(Bearer\s+)([A-Za-z0-9\-\._~\+\/]+=*)'
+          replace: '${1}***REDACTED***'
+      - replace:
+          expression: '([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
+          replace: '***@${2}'
+
+  # ---- Source 2: container logs (JSON file driver) ------------------------
+  - job_name: docker
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*-json.log
+    pipeline_stages:
+      # Unwrap the Docker JSON envelope first, so the redaction below operates
+      # on the real log line rather than on the escaped JSON string.
+      - json:
+          expressions:
+            output: log
+            stream: stream
+      - labels:
+          stream:
+      - output:
+          source: output
+      - replace:
+          expression: '(?i)(password|passwd|secret|token|api[_-]?key|authorization)["\s:=]+([^\s",}]+)'
+          replace: '${1}=***REDACTED***'
+      - replace:
+          expression: '(Bearer\s+)([A-Za-z0-9\-\._~\+\/]+=*)'
+          replace: '${1}***REDACTED***'
+      - replace:
+          expression: '([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
+          replace: '***@${2}'

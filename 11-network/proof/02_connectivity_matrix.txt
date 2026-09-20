@@ -1,0 +1,307 @@
+### NETWORK CONTROLS: CONNECTIVITY MATRIX @ 2026-09-20 12:49:31 UTC
+vpc=vpc-063dc7c8d30f6ee63
+web      public=32.196.140.165  private=10.42.1.10
+monitor  public=44.204.182.130
+private  10.42.10.10  (no public address by design)
+peer     10.43.1.10  (other VPC, via peering)
+
+==========================================================
+ 1. PUBLIC TIER — only the declared ports, only from my IP
+==========================================================
+  [OK]      nginx :80 on the web instance, from my IP
+  [BLOCKED] node_exporter :9100 from the internet  (expected: denied, rc=28)
+  [BLOCKED] an undeclared port (:8080) on the web instance  (expected: denied, rc=28)
+  [OK]      Grafana :3000 on the monitoring instance
+
+  (9100 is open ONLY to the monitoring security group -- same port,
+   different source, opposite result:)
+
+$ ssh monitoring -> curl http://10.42.1.10:9100/metrics
+Warning: Permanently added '44.204.182.130' (ED25519) to the list of known hosts.
+# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 2.8273e-05
+curl: (23) Failure writing output to destination
+  [OK]      scrape from the monitoring SG succeeds
+
+==========================================================
+ 2. PRIVATE TIER — no inbound path from the internet
+==========================================================
+
+$ aws ec2 describe-instances  # does the private host even have a public IP?
+i-02b67ca1cd7d2232d	10.42.10.10	None	subnet-07f7ad4a33b1eccce
+  [BLOCKED] SSH to the private host directly from the internet  (expected: denied, rc=255)
+
+  Reached instead through the web instance (internal routing between
+  the public and private subnets):
+
+$ ssh -J web ubuntu@10.42.10.10 'hostname; ip -4 addr show'
+Warning: Permanently added '32.196.140.165' (ED25519) to the list of known hosts.
+Warning: Permanently added '10.42.10.10' (ED25519) to the list of known hosts.
+ip-10-42-10-10
+2: ens5    inet 10.42.10.10/24 metric 100 brd 10.42.10.255 scope global dynamic ens5\       valid_lft 1996sec preferred_lft 1996sec
+  [OK]      subnet-to-subnet reachability confirmed
+
+==========================================================
+ 3. NAT — private subnet has egress but no ingress
+==========================================================
+
+$ ssh -J web private -> curl https://checkip.amazonaws.com
+  private host egresses as: 100.54.41.112
+  NAT instance public IP:   100.54.41.112
+  [OK]      egress is translated through the NAT instance
+
+$ route table for the private subnet (0.0.0.0/0 must point at the NAT ENI, not the IGW)
+10.42.0.0/16	local	None	None
+10.43.0.0/16	None	None	pcx-0a56dd577c626e108
+0.0.0.0/0	None	eni-019c1bf2dbee1e0b8	None
+None	vpce-03814e0db4487448d	None	None
+
+==========================================================
+ 4. PEERING — two private networks, both directions
+==========================================================
+
+$ private host (10.42.10.10) -> peer host (10.43.1.10)
+PING 10.43.1.10 (10.43.1.10) 56(84) bytes of data.
+64 bytes from 10.43.1.10: icmp_seq=1 ttl=64 time=0.293 ms
+64 bytes from 10.43.1.10: icmp_seq=2 ttl=64 time=0.329 ms
+64 bytes from 10.43.1.10: icmp_seq=3 ttl=64 time=0.330 ms
+
+--- 10.43.1.10 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2047ms
+rtt min/avg/max/mdev = 0.293/0.317/0.330/0.017 ms
+  [OK]      main -> peer
+
+$ peer host (10.43.1.10) -> private host (10.42.10.10)   # symmetric routing
+Warning: Permanently added '10.43.1.10' (ED25519) to the list of known hosts.
+PING 10.42.10.10 (10.42.10.10) 56(84) bytes of data.
+64 bytes from 10.42.10.10: icmp_seq=1 ttl=64 time=0.293 ms
+64 bytes from 10.42.10.10: icmp_seq=2 ttl=64 time=0.299 ms
+64 bytes from 10.42.10.10: icmp_seq=3 ttl=64 time=0.320 ms
+
+--- 10.42.10.10 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2060ms
+rtt min/avg/max/mdev = 0.293/0.304/0.320/0.011 ms
+  [OK]      peer -> main
+
+$ peering connection state
+pcx-0a56dd577c626e108	active	10.42.0.0/16	10.43.0.0/16
+
+==========================================================
+ 5. ENCRYPTION IN TRANSIT — IPsec over the peering link
+==========================================================
+
+$ ipsec statusall  # SA state and the negotiated cipher suite
+Status of IKE charon daemon (strongSwan 5.9.13, Linux 7.0.0-1012-aws, x86_64):
+  uptime: 54 minutes, since Sep 20 11:56:12 2026
+  malloc: sbrk 2723840, mmap 0, used 1278688, free 1445152
+  worker threads: 11 of 16 idle, 5/0/0/0 working, job queue: 0/0/0/0, scheduled: 31
+  loaded plugins: charon aesni aes rc2 sha2 sha1 md5 mgf1 random nonce x509 revocation constraints pubkey pkcs1 pkcs7 pkcs12 pgp dnskey sshkey pem openssl pkcs8 fips-prf gmp agent xcbc hmac kdf gcm drbg attr kernel-netlink resolve socket-default connmark stroke updown eap-mschapv2 xauth-generic counters
+Listening IP addresses:
+  10.42.10.10
+Connections:
+peex-private-link:  10.42.10.10...10.43.1.10  IKEv2, dpddelay=30s
+peex-private-link:   local:  [10.42.10.10] uses pre-shared key authentication
+peex-private-link:   remote: [10.43.1.10] uses pre-shared key authentication
+peex-private-link:   child:  dynamic === dynamic TRANSPORT, dpdaction=start
+Security Associations (2 up, 0 connecting):
+peex-private-link[68]: ESTABLISHED 1 second ago, 10.42.10.10[10.42.10.10]...10.43.1.10[10.43.1.10]
+peex-private-link[68]: IKEv2 SPIs: ebaea3d43ff0821d_i* b2a86c625fe283f8_r, pre-shared key reauthentication in 2 hours
+peex-private-link[68]: IKE proposal: AES_CBC_256/HMAC_SHA2_256_128/PRF_HMAC_SHA2_256/MODP_2048
+peex-private-link{13}:  INSTALLED, TRANSPORT, reqid 1, ESP SPIs: cdbc9f8d_i ce152c2f_o
+peex-private-link{13}:  AES_CBC_256/HMAC_SHA2_256_128, 0 bytes_i, 0 bytes_o, rekeying in 42 minutes
+peex-private-link{13}:   10.42.10.10/32 === 10.43.1.10/32
+peex-private-link[67]: ESTABLISHED 11 seconds ago, 10.42.10.10[10.42.10.10]...10.43.1.10[10.43.1.10]
+peex-private-link[67]: IKEv2 SPIs: 3bfec4639a9046b6_i* 8dd61320a1cb3f7a_r, pre-shared key reauthentication in 2 hours
+peex-private-link[67]: IKE proposal: AES_CBC_256/HMAC_SHA2_256_128/PRF_HMAC_SHA2_256/MODP_2048
+peex-private-link{12}:  INSTALLED, TRANSPORT, reqid 1, ESP SPIs: c8bec444_i c0180553_o
+peex-private-link{12}:  AES_CBC_256/HMAC_SHA2_256_128, 320 bytes_i (5 pkts, 4s ago), 320 bytes_o (5 pkts, 4s ago), rekeying in 44 minutes
+peex-private-link{12}:   10.42.10.10/32 === 10.43.1.10/32
+
+$ tcpdump: traffic between the hosts must be ESP, not readable ICMP
+12:50:25.901655 ens5  Out IP 10.42.10.10 > 10.43.1.10: ESP(spi=0xce152c2f,seq=0x1), length 120
+12:50:25.901947 ens5  In  IP 10.43.1.10 > 10.42.10.10: ESP(spi=0xcdbc9f8d,seq=0x1), length 120
+12:50:26.909644 ens5  Out IP 10.42.10.10 > 10.43.1.10: ESP(spi=0xce152c2f,seq=0x2), length 120
+12:50:26.909923 ens5  In  IP 10.43.1.10 > 10.42.10.10: ESP(spi=0xcdbc9f8d,seq=0x2), length 120
+12:50:27.933632 ens5  Out IP 10.42.10.10 > 10.43.1.10: ESP(spi=0xce152c2f,seq=0x3), length 120
+12:50:27.933944 ens5  In  IP 10.43.1.10 > 10.42.10.10: ESP(spi=0xcdbc9f8d,seq=0x3), length 120
+12:50:28.957639 ens5  Out IP 10.42.10.10 > 10.43.1.10: ESP(spi=0xce152c2f,seq=0x4), length 120
+12:50:28.957917 ens5  In  IP 10.43.1.10 > 10.42.10.10: ESP(spi=0xcdbc9f8d,seq=0x4), length 120
+  (ESP packets = payload encrypted; plain 'ICMP echo request' lines would mean the tunnel is down)
+
+==========================================================
+ 6. SUBNET-LEVEL FILTERING — Network ACLs
+==========================================================
+
+$ public NACL rules
+100	True	-1	allow	0.0.0.0/0	None	None
+32767	True	-1	deny	0.0.0.0/0	None	None
+100	False	6	allow	109.108.78.23/32	22	22
+110	False	6	allow	109.108.78.23/32	80	80
+120	False	6	allow	109.108.78.23/32	3000	3000
+130	False	6	allow	109.108.78.23/32	9090	9090
+140	False	-1	allow	10.42.0.0/16	None	None
+150	False	-1	allow	10.43.0.0/16	None	None
+160	False	6	allow	0.0.0.0/0	1024	65535
+32767	False	-1	deny	0.0.0.0/0	None	None
+
+$ private NACL rules (note: no rule admits 0.0.0.0/0 inbound except ephemeral return traffic)
+100	True	-1	allow	0.0.0.0/0	None	None
+32767	True	-1	deny	0.0.0.0/0	None	None
+100	False	-1	allow	10.42.0.0/16	None	None
+110	False	-1	allow	10.43.0.0/16	None	None
+120	False	6	allow	0.0.0.0/0	1024	65535
+32767	False	-1	deny	0.0.0.0/0	None	None
+
+==========================================================
+ 7. EGRESS RESTRICTION — no 0.0.0.0/0 all-protocols rule
+==========================================================
+
+$ egress rules per security group
+[
+    {
+        "Name": "peex-netcompute-web-sg",
+        "Egress": [
+            {
+                "Proto": "tcp",
+                "From": 80,
+                "To": 80,
+                "Cidr": "0.0.0.0/0",
+                "Why": "apt repositories that still use plain HTTP"
+            },
+            {
+                "Proto": "-1",
+                "From": null,
+                "To": null,
+                "Cidr": "10.42.0.0/16",
+                "Why": "internal traffic to other tiers in this VPC"
+            },
+            {
+                "Proto": "udp",
+                "From": 53,
+                "To": 53,
+                "Cidr": "0.0.0.0/0",
+                "Why": "DNS resolution"
+            },
+            {
+                "Proto": "tcp",
+                "From": 443,
+                "To": 443,
+                "Cidr": "0.0.0.0/0",
+                "Why": "package repos, container registries, AWS APIs"
+            }
+        ]
+    },
+    {
+        "Name": "peex-netcompute-nat-sg",
+        "Egress": [
+            {
+                "Proto": "-1",
+                "From": null,
+                "To": null,
+                "Cidr": "0.0.0.0/0",
+                "Why": "forwarded traffic on to the internet"
+            }
+        ]
+    },
+    {
+        "Name": "default",
+        "Egress": [
+            {
+                "Proto": "-1",
+                "From": null,
+                "To": null,
+                "Cidr": "0.0.0.0/0",
+                "Why": null
+            }
+        ]
+    },
+    {
+        "Name": "peex-netcompute-private-sg",
+        "Egress": [
+            {
+                "Proto": "tcp",
+                "From": 80,
+                "To": 80,
+                "Cidr": "0.0.0.0/0",
+                "Why": "apt repositories that still use plain HTTP (routed through the NAT instance)"
+            },
+            {
+                "Proto": "-1",
+                "From": null,
+                "To": null,
+                "Cidr": "10.42.0.0/16",
+                "Why": "internal traffic within the VPC and across the peering link"
+            },
+            {
+                "Proto": "udp",
+                "From": 53,
+                "To": 53,
+                "Cidr": "0.0.0.0/0",
+                "Why": "DNS resolution (routed through the NAT instance)"
+            },
+            {
+                "Proto": "tcp",
+                "From": 443,
+                "To": 443,
+                "Cidr": "0.0.0.0/0",
+                "Why": "package repos, container registries, AWS APIs (routed through the NAT instance)"
+            }
+        ]
+    },
+    {
+        "Name": "peex-netcompute-monitoring-sg",
+        "Egress": [
+            {
+                "Proto": "tcp",
+                "From": 80,
+                "To": 80,
+                "Cidr": "0.0.0.0/0",
+                "Why": "apt repositories that still use plain HTTP"
+            },
+            {
+                "Proto": "-1",
+                "From": null,
+                "To": null,
+                "Cidr": "10.42.0.0/16",
+                "Why": "scrape targets and peered network"
+            },
+            {
+                "Proto": "udp",
+                "From": 53,
+                "To": 53,
+                "Cidr": "0.0.0.0/0",
+                "Why": "DNS resolution"
+            },
+            {
+                "Proto": "tcp",
+                "From": 443,
+                "To": 443,
+                "Cidr": "0.0.0.0/0",
+                "Why": "package repos, container registries, AWS APIs"
+            }
+        ]
+    }
+]
+
+$ # a blocked outbound port proves egress really is restricted
+rc=28  (non-zero = egress on :8888 denied as intended)
+
+==========================================================
+ 8. TRAFFIC MONITORING — VPC Flow Logs
+==========================================================
+
+$ aws logs describe-log-groups  # flow logs enabled?
+/aws/vpc/peex-netcompute-flow-logs	1	0
+
+$ recent REJECT records (the denials above, recorded independently)
+  (no REJECT records in this stream yet -- flow logs lag by up to ~10 min)
+
+==========================================================
+ 9. PRIVATE ACCESS TO S3 — gateway endpoint
+==========================================================
+
+$ aws ec2 describe-vpc-endpoints
+vpce-03814e0db4487448d	com.amazonaws.us-east-1.s3	Gateway	available
+
+MATRIX COMPLETE

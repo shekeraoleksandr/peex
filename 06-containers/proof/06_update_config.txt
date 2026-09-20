@@ -1,0 +1,103 @@
+### UPDATE CONFIGURATION FOR A CONTAINERIZED APPLICATION
+config file : config/app.env
+change      : PORT 4000 -> 4100
+applied by  : recreating the container via scripts/run.sh (existing procedure)
+
+===== BEFORE =====
+
+$ cat config/app.env
+# Configuration file for the containerized application.
+#
+# Consumed by scripts/run.sh via `docker run --env-file`, and modified by
+# scripts/update-config.sh. Nothing here is baked into the image: a change
+# takes effect by RECREATING the container, with no rebuild -- which is what
+# separates configuration from code.
+
+# Port the Angular SSR server binds to INSIDE the container.
+# The container's Dockerfile defaults this to 4000; setting it here overrides
+# that at runtime, and scripts/run.sh publishes it on HOST_PORT.
+PORT=4000
+
+# Node runtime mode. 'production' disables dev-only middleware and verbose
+# error pages.
+NODE_ENV=production
+
+# Angular CLI telemetry, off.
+NG_CLI_ANALYTICS=false
+
+$ docker inspect -f '{{json .Config.Env}}' peex_movielinks_landing   # env of the RUNNING container
+["PORT=4000"
+"NODE_ENV=production"
+
+$ docker ps   # published port mapping
+NAMES                     STATUS         PORTS
+peex_movielinks_landing   Up 2 minutes   0.0.0.0:8080->4000/tcp, [::]:8080->4000/tcp
+
+$ # ports the process is listening on INSIDE the container
+  listening on: 4000
+
+$ curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/
+200
+
+===== APPLYING THE CHANGE =====
+
+$ sed -i 's/^PORT=4000/PORT=4100/' config/app.env
+
+$ diff config/app.env.before config/app.env
+11c11
+< PORT=4000
+---
+> PORT=4100
+
+
+$ ./scripts/run.sh   # recreate the container using the existing procedure
+(run.sh reads PORT from the same file, so the published mapping follows it)
+
+===== AFTER =====
+
+$ cat config/app.env
+# Configuration file for the containerized application.
+#
+# Consumed by scripts/run.sh via `docker run --env-file`, and modified by
+# scripts/update-config.sh. Nothing here is baked into the image: a change
+# takes effect by RECREATING the container, with no rebuild -- which is what
+# separates configuration from code.
+
+# Port the Angular SSR server binds to INSIDE the container.
+# The container's Dockerfile defaults this to 4000; setting it here overrides
+# that at runtime, and scripts/run.sh publishes it on HOST_PORT.
+PORT=4100
+
+# Node runtime mode. 'production' disables dev-only middleware and verbose
+# error pages.
+NODE_ENV=production
+
+# Angular CLI telemetry, off.
+NG_CLI_ANALYTICS=false
+
+$ docker inspect -f '{{json .Config.Env}}' peex_movielinks_landing   # the change reached the container
+["PORT=4100"
+"NODE_ENV=production"
+
+$ docker ps   # mapping now publishes the new internal port
+NAMES                     STATUS         PORTS
+peex_movielinks_landing   Up 4 seconds   0.0.0.0:8080->4100/tcp, [::]:8080->4100/tcp
+
+$ # the application is now LISTENING on 4100 inside the container
+  (this is the proof that the config reached the running app, not just the file)
+  listening on: 4100
+
+$ curl -i http://localhost:8080/   # still served, through the new internal port
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Cache-Control: no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+content-length: 167924
+content-type: text/html;charset=UTF-8
+etag: "c68c421147a771ced1b0f6c7b9db0391885cb96389db9d3ce374d05350cdde05"
+  [HTTP 200 -- 168123 bytes received]
+
+$ docker logs --tail 5 peex_movielinks_landing   # container logs after the recreate
+
+CONFIG UPDATE APPLIED AND VERIFIED

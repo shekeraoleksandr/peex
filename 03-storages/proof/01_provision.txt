@@ -1,0 +1,75 @@
+### PROVISION @ 2026-09-19 10:54:27 UTC
+region=us-east-1  account=991246619778  bucket=peex-storage-demo-991246619778
+
+== 1. Create primary bucket ==
+{
+    "Location": "/peex-storage-demo-991246619778",
+    "BucketArn": "arn:aws:s3:::peex-storage-demo-991246619778"
+}
+== 2. Block ALL public access ==
+== 3. Enable versioning ==
+== 4. Server access logging ==
+{
+    "Location": "/peex-storage-demo-991246619778-logs",
+    "BucketArn": "arn:aws:s3:::peex-storage-demo-991246619778-logs"
+}
+access logging enabled -> s3://peex-storage-demo-991246619778-logs/access-logs/
+
+== 5. Verify configuration ==
+--- Public access block ---
+{
+    "PublicAccessBlockConfiguration": {
+        "BlockPublicAcls": true,
+        "IgnorePublicAcls": true,
+        "BlockPublicPolicy": true,
+        "RestrictPublicBuckets": true
+    }
+}
+--- Encryption at rest ---
+{
+    "ServerSideEncryptionConfiguration": {
+        "Rules": [
+            {
+                "ApplyServerSideEncryptionByDefault": {
+                    "SSEAlgorithm": "AES256"
+                },
+                "BucketKeyEnabled": true,
+                "BlockedEncryptionTypes": {
+                    "EncryptionType": [
+                        "SSE-C"
+                    ]
+                }
+            }
+        ]
+    }
+}
+--- Versioning ---
+{
+    "Status": "Enabled"
+}
+--- Tags ---
+{
+    "TagSet": [
+        {
+            "Key": "Project",
+            "Value": "PeEx"
+        },
+        {
+            "Key": "Environment",
+            "Value": "demo"
+        },
+        {
+            "Key": "Competency",
+            "Value": "storages"
+        }
+    ]
+}
+--- Logging ---
+{
+    "LoggingEnabled": {
+        "TargetBucket": "peex-storage-demo-991246619778-logs",
+        "TargetPrefix": "access-logs/"
+    }
+}
+
+PROVISION DONE: s3://peex-storage-demo-991246619778

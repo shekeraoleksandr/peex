@@ -1,0 +1,8 @@
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+tfplan
+terraform.tfvars
+peex-netcompute-key.pem
+.known_hosts_run

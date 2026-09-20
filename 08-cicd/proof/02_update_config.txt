@@ -1,0 +1,37 @@
+== BEFORE ==
+{
+  "name": "peex-cicd-demo",
+  "version": "1.0.0",
+  "environment": "staging",
+  "greeting_enabled": true
+}
+== AFTER ==
+{
+  "name": "peex-cicd-demo",
+  "version": "1.1.0",
+  "environment": "production",
+  "greeting_enabled": false
+}
+Config updated. Re-run ./pipeline/run-local.sh to build & deploy the new version.
+
+----- re-run pipeline after config update -----
+
+==================== STAGE: build ====================
+built artifact: peex-cicd-demo-1.1.0.tar.gz (3651 bytes)
+
+==================== STAGE: deploy ====================
+serving on :8091 config=/root/peex-build/08-cicd/build/deploy/config/app.config.json
+deploy OK (healthz 200)
+  / -> greeting disabled — v1.1.0 (production)
+  /version -> {"name": "peex-cicd-demo", "version": "1.1.0", "environment": "production"}
+
+==================== STAGE: verify ====================
+== Verify pipeline execution results ==
+  PASS: unit tests reported OK
+  PASS: build artifact present: peex-cicd-demo-1.1.0.tar.gz
+  PASS: deployed app healthy; /version = {"name": "peex-cicd-demo", "version": "1.1.0", "environment": "production"}
+  PASS: deployed version matches config (1.1.0)
+
+VERIFY: all pipeline results OK
+
+PIPELINE SUCCEEDED (version 1.1.0)

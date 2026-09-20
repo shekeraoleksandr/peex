@@ -1,0 +1,74 @@
+services:
+  postgres:
+    build: ./postgres
+    container_name: peex_db_postgres
+    environment:
+      POSTGRES_USER: peex_admin
+      POSTGRES_PASSWORD: peex_pass
+      POSTGRES_DB: company
+    ports:
+      # Bound to localhost only: not reachable from the LAN/internet
+      # (network-restriction requirement). Combined with pg_hba.conf below,
+      # which additionally rejects any non-TLS / non-allow-listed source.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ./sql/provision:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    # Instance-level configuration applied at startup, including forced TLS
+    # and the custom, network-restricted pg_hba.conf baked into the image.
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c max_connections=50
+      -c log_min_duration_statement=0
+      -c ssl=on
+      -c ssl_cert_file=/etc/postgresql/certs/server.crt
+      -c ssl_key_file=/etc/postgresql/certs/server.key
+      -c hba_file=/etc/postgresql/pg_hba.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U peex_admin -d company"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  mongo:
+    build: ./mongo
+    container_name: peex_db_mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: peex_admin
+      MONGO_INITDB_ROOT_PASSWORD: peex_pass
+      MONGO_INITDB_DATABASE: catalog
+    ports:
+      # Bound to localhost only (network-restriction requirement).
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - ./nosql/init:/docker-entrypoint-initdb.d:ro
+      - mongodata:/data/db
+    # Force TLS for all client connections (auth is auto-enabled by the
+    # official image whenever MONGO_INITDB_ROOT_USERNAME/PASSWORD are set).
+    command: >
+      mongod
+      --tlsMode requireTLS
+      --tlsCertificateKeyFile /etc/mongo/certs/mongo.pem
+      --tlsCAFile /etc/mongo/certs/mongo.crt
+      --tlsAllowConnectionsWithoutCertificates
+    healthcheck:
+      test: ["CMD", "mongosh", "--tls", "--tlsAllowInvalidCertificates", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # Sibling container on the same docker network, standing in for a "remote"
+  # application host. Used to prove that access is possible only via TLS and
+  # only from within the allow-listed network (not from arbitrary hosts).
+  client:
+    image: postgres:16-alpine
+    container_name: peex_db_client
+    depends_on:
+      - postgres
+      - mongo
+    entrypoint: ["sleep", "infinity"]
+
+volumes:
+  pgdata:
+  mongodata:

@@ -1,0 +1,15 @@
+==> [Trainee] Identify database engine version
+$ $PSQL -f - < sql/02_engine_version.sql
+                                            version                                             
+------------------------------------------------------------------------------------------------
+ PostgreSQL 16.15 on aarch64-unknown-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+(1 row)
+
+ server_version 
+----------------
+ 16.15
+(1 row)
+
+-- MongoDB engine version:
+$ $MONGO --eval "print(db.version())"
+7.0.43

@@ -1,0 +1,9 @@
+# Client-side config snippet — add to ~/.ssh/config to USE secure shell access.
+Host peex-demo
+    HostName <SERVER_IP_OR_DNS>
+    User ec2-user
+    IdentityFile ~/.ssh/peex_ed25519
+    IdentitiesOnly yes
+    PubkeyAuthentication yes
+    PasswordAuthentication no
+    StrictHostKeyChecking accept-new

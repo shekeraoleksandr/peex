@@ -1,0 +1,17 @@
+{
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.tabSize": 4,
+  "editor.rulers": [100],
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+  "shellcheck.enable": true,
+  "shellformat.flag": "-i 4",
+  "[python]": {
+    "editor.formatOnSave": true
+  },
+  "python.testing.unittestEnabled": true,
+  "python.analysis.typeCheckingMode": "basic"
+}

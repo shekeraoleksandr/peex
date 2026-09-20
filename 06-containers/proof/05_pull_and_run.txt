@@ -1,0 +1,100 @@
+### PULL FROM REGISTRY AND RUN @ 2026-09-20 16:21:32 UTC
+registry image: europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod
+host port:      8081 -> 4000
+
+$ gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+WARNING: Your config file at [/Users/oleksandrshkera/.docker/config.json] contains these credential helper entries:
+
+{
+  "credHelpers": {
+    "europe-central2-docker.pkg.dev": "gcloud",
+    "europe-west1-docker.pkg.dev": "gcloud"
+  }
+}
+Adding credentials for: europe-west1-docker.pkg.dev
+gcloud credential helpers already registered correctly.
+
+$ # resolve the newest tag in the registry
+using: europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod:cf23a38
+
+$ docker pull europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod:cf23a38
+cf23a38: Pulling from movielinks-475222/movie-links-lending/lending-prod
+10d01f39082f: Pulling fs layer
+725b616d8b01: Pulling fs layer
+78e90e478ad5: Pulling fs layer
+7cac877894db: Pulling fs layer
+973b7f43f374: Pulling fs layer
+f97d7d4c47ac: Pulling fs layer
+548ee0f4f7f1: Pulling fs layer
+3db838653d50: Pulling fs layer
+78e90e478ad5: Download complete
+548ee0f4f7f1: Download complete
+f97d7d4c47ac: Download complete
+973b7f43f374: Download complete
+725b616d8b01: Download complete
+78e90e478ad5: Pull complete
+725b616d8b01: Pull complete
+7cac877894db: Download complete
+7cac877894db: Pull complete
+548ee0f4f7f1: Pull complete
+f97d7d4c47ac: Pull complete
+973b7f43f374: Pull complete
+3db838653d50: Download complete
+10d01f39082f: Download complete
+3db838653d50: Pull complete
+10d01f39082f: Pull complete
+Digest: sha256:7be8101a0d6114dc3ef837f3df16902878b9809cf76b55328f65eccf6c6c2fe2
+Status: Downloaded newer image for europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod:cf23a38
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod:cf23a38
+
+$ docker images --filter reference=europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod
+REPOSITORY:TAG                                                                           SIZE      CREATED
+europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod:cf23a38   1.16GB    6 days ago
+
+$ docker rm -f peex_movielinks_landing_registry   # clean any previous run
+
+$ docker run -d --name peex_movielinks_landing_registry -p 8081:4000 -e PORT=4000 europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod:cf23a38
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+129a26d3e8411d24530da8897a2d098b8d20e2440ce53c2b05202833cffa11ac
+
+-- waiting for the pulled image to serve --
+   up after 2s
+
+$ docker ps --filter name=peex_movielinks_landing_registry
+NAMES                              IMAGE                                                                                    STATUS        PORTS
+peex_movielinks_landing_registry   europe-west1-docker.pkg.dev/movielinks-475222/movie-links-lending/lending-prod:cf23a38   Up 1 second   0.0.0.0:8081->4000/tcp, [::]:8081->4000/tcp
+
+$ curl -i http://localhost:8081/   # same functionality, from the registry image
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Cache-Control: no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+content-length: 191118
+content-type: text/html;charset=UTF-8
+etag: "b954e7d8e2f63ddb0e4a99fb00fa3f9733bd7eab59288cdf62456c0fd1032daf"
+Vary: Accept-Encoding
+Date: Sun, 20 Sep 2026 16:22:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+<!DOCTYPE html><html lang="en" data-beasties-container><head>
+  <meta charset="utf-8">
+  <title>MovieLinks — Movie Reviews, Watch Orders &amp; Recommendations</title>
+  <base href="/">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <style>
+    html, body {
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #101115;
+    }
+  [HTTP 200 -- 191208 bytes received]
+
+$ docker logs --tail 20 peex_movielinks_landing_registry
+MovieLinks frontend is running at http://localhost:4000
+
+PULL AND RUN DONE
+locally built image : http://localhost:8080/
+registry image      : http://localhost:8081/

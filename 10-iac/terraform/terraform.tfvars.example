@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and set a globally-unique prefix.
+region            = "us-east-1"
+bucket_prefix     = "peex-iac-demo-CHANGE-ME"   # must be globally unique
+environment       = "dev"
+enable_versioning = true
+tags = {
+  Project    = "PeEx"
+  Competency = "iac"
+  Owner      = "oleksandr"
+}

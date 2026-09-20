@@ -1,0 +1,50 @@
+### RUN (port forwarding) @ 2026-09-20 16:20:29 UTC
+image=movielinks-landing:peex-local  host port=8080 -> container port=4000
+
+$ docker rm -f peex_movielinks_landing   # clean any previous run
+peex_movielinks_landing
+
+$ docker run -d --name peex_movielinks_landing -p 8080:4000 --env-file config/app.env movielinks-landing:peex-local
+9d05cae7f1adf55dd4504d230509aff971b690866e27b460ae5c6a54066faeb7
+
+-- waiting for the SSR server to accept connections --
+   up after 2s
+
+$ docker ps --filter name=peex_movielinks_landing
+NAMES                     IMAGE                           STATUS        PORTS
+peex_movielinks_landing   movielinks-landing:peex-local   Up 1 second   0.0.0.0:8080->4000/tcp, [::]:8080->4000/tcp
+
+$ curl -i http://localhost:8080/   # port forwarding works
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Cache-Control: no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+content-length: 167924
+content-type: text/html;charset=UTF-8
+etag: "c68c421147a771ced1b0f6c7b9db0391885cb96389db9d3ce374d05350cdde05"
+Date: Sun, 20 Sep 2026 16:20:31 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+<!DOCTYPE html><html lang="en" data-beasties-container><head>
+  <meta charset="utf-8">
+  <title>MovieLinks - Your Movie Space</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Basic Meta Tags -->
+  <meta name="description" content="Discover and organize your favorite movies and TV shows. Create lists, share with friends, and track new releases.">
+  <meta name="keywords" content="movies, tv shows, watchlist, entertainment, streaming">
+  <meta name="author" content="MovieLinks">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph Meta Tags -->
+  [HTTP 200 -- 168123 bytes received]
+
+-- page title served by the container --
+<title>MovieLinks - Your Movie Space</title>
+
+$ docker logs --tail 25 peex_movielinks_landing
+
+RUN DONE (container left running -- 'docker rm -f peex_movielinks_landing' to stop)

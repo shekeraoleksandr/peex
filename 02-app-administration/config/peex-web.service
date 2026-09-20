@@ -1,0 +1,37 @@
+[Unit]
+Description=PeEx demo web service (nginx, least-privilege)
+Documentation=file:/opt/peex-web/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=peexweb
+Group=peexweb
+PIDFile=/run/peex-web/nginx.pid
+
+# systemd creates and owns these dirs for the service user on every start
+RuntimeDirectory=peex-web
+LogsDirectory=peex-web
+StateDirectory=peex-web
+
+ExecStartPre=/usr/sbin/nginx -t -c /etc/peex-web/nginx-peex.conf
+ExecStart=/usr/sbin/nginx -c /etc/peex-web/nginx-peex.conf
+ExecReload=/usr/sbin/nginx -s reload -c /etc/peex-web/nginx-peex.conf
+ExecStop=/usr/sbin/nginx -s quit -c /etc/peex-web/nginx-peex.conf
+Restart=on-failure
+RestartSec=3
+
+# --- Hardening / principle of least privilege ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ReadWritePaths=/var/log/peex-web /var/lib/peex-web /run/peex-web
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

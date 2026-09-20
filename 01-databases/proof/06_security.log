@@ -1,0 +1,32 @@
+==> [Middle] Security: network restriction + TLS enforcement
+-- Host ports are bound to 127.0.0.1 only (not reachable from LAN):
+$ docker compose port postgres 5432
+127.0.0.1:5432
+$ docker compose port mongo 27017
+127.0.0.1:27017
+-- Postgres: TLS-required connection from a sibling container (simulated remote client) succeeds:
+$ psql 'host=postgres port=5432 dbname=company user=peex_admin sslmode=require' -c 'select 1 as tls_ok;'   [from client container]
+ tls_ok 
+--------
+      1
+(1 row)
+
+-- Postgres: the same connection WITHOUT TLS is rejected by pg_hba.conf (expected failure):
+$ psql 'host=postgres port=5432 dbname=company user=peex_admin sslmode=disable' -c 'select 1;'   [from client container]
+psql: error: connection to server at "postgres" (172.19.0.3), port 5432 failed: FATAL:  pg_hba.conf rejects connection for host "172.19.0.4", user "peex_admin", database "company", no encryption
+-- MongoDB: TLS-required connection succeeds:
+$ mongosh 'mongodb://peex_admin:***@localhost:27017/admin?tls=true&tlsAllowInvalidCertificates=true' --eval 'db.runCommand({ping:1}).ok'
+tls_ok: 1
+-- MongoDB: the same connection WITHOUT TLS is rejected (expected failure):
+$ mongosh 'mongodb://peex_admin:***@localhost:27017/admin?tls=false' --eval 'db.runCommand({ping:1}).ok'
+MongoServerSelectionError: connection <monitor> to 127.0.0.1:27017 closed
+-- Least privilege: app_reader can SELECT ...
+$ psql -U app_reader -d company -c 'SELECT COUNT(*) FROM employees;'   [app_reader]
+ count 
+-------
+     5
+(1 row)
+
+-- ... but is denied INSERT (expected failure):
+$ psql -U app_reader -d company -c "INSERT INTO employees(...) VALUES (...);"   [app_reader]
+ERROR:  permission denied for table employees

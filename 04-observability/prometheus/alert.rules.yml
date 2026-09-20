@@ -1,0 +1,32 @@
+groups:
+  - name: infra-basic
+    rules:
+      # Fires when any scrape target is unreachable — the basic trigger.
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.instance }} is down"
+          description: "{{ $labels.job }} on {{ $labels.instance }} has been unreachable for over 1 minute."
+
+      # Fires on sustained high host load.
+      - alert: HighNodeLoad
+        expr: node_load1 > 4
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High load on {{ $labels.instance }}"
+          description: "1-minute load average is {{ $value }} (>4) for 2 minutes."
+
+      # Fires when node-exporter reports low free memory.
+      - alert: LowMemory
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low available memory on {{ $labels.instance }}"
+          description: "Available memory is {{ $value | printf \"%.1f\" }}% (<10%)."

@@ -1,0 +1,39 @@
+stages: [lint, test, build, deploy]
+
+image: python:3.12-slim
+
+variables:
+  APP_PORT: "8091"
+
+lint:
+  stage: lint
+  script:
+    - python -m py_compile app/*.py tests/*.py
+    - echo "lint OK"
+
+test:
+  stage: test
+  script:
+    - python -m unittest discover -s tests -v | tee test-report.txt
+  artifacts:
+    when: always
+    paths: [test-report.txt]
+    expire_in: 1 week
+
+build:
+  stage: build
+  script:
+    - VERSION=$(python -c "import json;print(json.load(open('config/app.config.json'))['version'])")
+    - echo "building version $VERSION"
+    - tar -czf peex-cicd-demo-$VERSION.tar.gz app config
+  artifacts:
+    paths: ["peex-cicd-demo-*.tar.gz"]
+    expire_in: 1 week
+
+deploy:
+  stage: deploy
+  script:
+    - APP_PORT=8091 python app/server.py &
+    - sleep 2
+    - python -c "import urllib.request;assert urllib.request.urlopen('http://127.0.0.1:8091/healthz').status==200;print('deploy healthz OK')"
+    - python -c "import urllib.request;print('version:',urllib.request.urlopen('http://127.0.0.1:8091/version').read().decode())"

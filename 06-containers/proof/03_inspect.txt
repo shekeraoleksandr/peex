@@ -1,0 +1,61 @@
+### IMAGE INSPECTION (best practices) @ 2026-09-20 16:20:37 UTC
+image=movielinks-landing:peex-local
+
+$ docker inspect -f '{{.Config.User}}' movielinks-landing:peex-local   # runs as non-root?
+node
+
+$ docker run --rm --entrypoint sh movielinks-landing:peex-local -c 'id'   # effective uid inside
+uid=1000(node) gid=1000(node) groups=1000(node)
+
+$ docker inspect -f '{{json .Config.ExposedPorts}}' movielinks-landing:peex-local   # EXPOSE
+{"4000/tcp":{}}
+
+$ docker inspect -f '{{json .Config.Cmd}}' movielinks-landing:peex-local   # CMD
+["node","dist/movielinks-landing/server/server.mjs"]
+
+$ docker inspect -f '{{json .Config.Env}}' movielinks-landing:peex-local   # NODE_ENV/PORT
+["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","NODE_VERSION=20.19.0","YARN_VERSION=1.22.22","NG_CLI_ANALYTICS=false","NODE_ENV=production","PORT=4000"]
+
+$ docker images movielinks-landing --format '{{.Repository}}:{{.Tag}}  {{.Size}}'
+movielinks-landing:2339ad4  1.09GB
+movielinks-landing:peex-local  1.09GB
+
+$ docker history movielinks-landing:peex-local   # layer efficiency (multi-stage: only final stage layers)
+SIZE      CREATED BY
+0B        CMD ["node" "dist/movielinks-landing/server/…
+0B        EXPOSE &{[{{28 0} {28 0}}] 0x4000c94540}
+0B        USER node
+152MB     COPY --chown=node:node /usr/src/app/dist ./d…
+472MB     COPY --chown=node:node /usr/src/app/node_mod…
+0B        ENV PORT=4000
+0B        ENV NODE_ENV=production
+0B        ENV NG_CLI_ANALYTICS=false
+16.4kB    WORKDIR /usr/src/app
+0B        CMD ["node"]
+0B        ENTRYPOINT ["docker-entrypoint.sh"]
+20.5kB    COPY docker-entrypoint.sh /usr/local/bin/ # …
+7.38MB    RUN /bin/sh -c set -ex   && savedAptMark="$(…
+0B        ENV YARN_VERSION=1.22.22
+125MB     RUN /bin/sh -c ARCH= OPENSSL_ARCH= && dpkgAr…
+0B        ENV NODE_VERSION=20.19.0
+401kB     RUN /bin/sh -c groupadd --gid 1000 node   &&…
+86.6MB    # debian.sh --arch 'arm64' out/ 'bullseye' '…
+
+$ docker run --rm --entrypoint sh movielinks-landing:peex-local -c 'ls -a /usr/src/app'   # what actually shipped
+.
+..
+dist
+node_modules
+
+$ # confirm build-time junk did NOT make it into the final image
+  .git: absent (good)
+  src: absent (good)
+  public: absent (good)
+  .angular: absent (good)
+  dist:         present (expected - the built app)
+  node_modules: present (expected - prod deps only, after npm prune --omit=dev)
+
+$ docker run --rm --entrypoint sh movielinks-landing:peex-local -c 'ls node_modules | wc -l'   # prod dep count
+279
+
+INSPECTION DONE

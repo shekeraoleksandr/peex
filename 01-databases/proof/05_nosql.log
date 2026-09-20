@@ -1,0 +1,64 @@
+==> [Middle] Configure & maintain NoSQL database
+$ $MONGO < nosql/query.js
+test> 
+test> catalog
+catalog> 
+catalog> --- Mongo server version: 7.0.43
+
+catalog> --- Products tagged "network", cheapest first:
+
+catalog> {
+  _id: ObjectId('6aaacc97577589a03a672ab8'),
+  sku: 'A-100',
+  name: 'Router X1',
+  price: 199.99,
+  tags: [
+    'network',
+    'hardware'
+  ]
+}
+{
+  _id: ObjectId('6aaacc97577589a03a672ab9'),
+  sku: 'A-101',
+  name: 'Switch S8',
+  price: 349.5,
+  tags: [
+    'network',
+    'hardware'
+  ]
+}
+
+catalog> 
+catalog> --- Configured indexes on products:
+
+catalog> [
+  {
+    v: 2,
+    key: {
+      _id: 1
+    },
+    name: '_id_'
+  },
+  {
+    v: 2,
+    key: {
+      sku: 1
+    },
+    name: 'sku_1',
+    unique: true
+  },
+  {
+    v: 2,
+    key: {
+      tags: 1
+    },
+    name: 'tags_1'
+  }
+]
+
+catalog> 
+catalog> --- Schema validation is enforced (bad insert must be rejected):
+
+catalog> | | | | | OK, rejected as expected: Document failed validation
+
+catalog> 

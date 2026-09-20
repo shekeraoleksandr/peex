@@ -1,0 +1,99 @@
+services:
+  # ---------------- METRICS ----------------
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: peex_prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      # 2h was far too short to show trends or satisfy 'historical data
+      # retained'. 15 days, capped by size so a small disk cannot fill.
+      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.size=2GB
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: peex_node_exporter
+    command:
+      - --path.rootfs=/host
+    pid: host
+    volumes:
+      - /:/host:ro
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+
+  # ---------------- LOGS ----------------
+  loki:
+    image: grafana/loki:2.9.10
+    container_name: peex_loki
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.10
+    container_name: peex_promtail
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on: [loki]
+    restart: unless-stopped
+
+  # ---------------- DASHBOARDS ----------------
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: peex_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: peexadmin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on: [prometheus, loki]
+    restart: unless-stopped
+
+  # ---------------- ALERTING / TRIGGER ----------------
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: peex_alertmanager
+    command: --config.file=/etc/alertmanager/alertmanager.yml
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+
+  # The "automated process" that a firing alert triggers: a webhook receiver
+  # that records every alert it is sent (see webhook/sink.py).
+  webhook-sink:
+    image: python:3.12-slim
+    container_name: peex_webhook_sink
+    command: ["python", "/app/sink.py"]
+    volumes:
+      - ./webhook/sink.py:/app/sink.py:ro
+      - webhook_data:/data
+    ports:
+      - "8088:8080"
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  loki_data:
+  grafana_data:
+  webhook_data:
