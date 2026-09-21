@@ -1,5 +1,11 @@
 # Network architecture
 
+> **Діаграма:** `network-topology.drawio` — відкривається і редагується в
+> [draw.io / diagrams.net](https://app.diagrams.net) (File → Open From → Device).
+> Поруч лежать `network-topology.svg` (відкрити в браузері) і
+> `network-topology.png` 3200px — для скріншота в ревʼю.
+> ASCII-схема нижче лишається як текстова версія тієї ж топології.
+
 ## Topology
 
 ```
