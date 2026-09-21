@@ -195,16 +195,28 @@ aws logs describe-log-groups --log-group-name-prefix "$LOG_GROUP" \
     --query 'logGroups[].[logGroupName,retentionInDays,storedBytes]' --output text
 
 note "recent REJECT records (the denials above, recorded independently)"
-STREAM="$(aws logs describe-log-streams --log-group-name "$LOG_GROUP" \
-    --order-by LastEventTime --descending --max-items 1 \
-    --query 'logStreams[0].logStreamName' --output text 2>/dev/null || true)"
-if [ -n "${STREAM:-}" ] && [ "$STREAM" != "None" ]; then
-    aws logs get-log-events --log-group-name "$LOG_GROUP" --log-stream-name "$STREAM" \
-        --limit 200 --query 'events[].message' --output text 2>/dev/null \
-        | grep -i "REJECT" | head -10 \
-        || echo "  (no REJECT records in this stream yet -- flow logs lag by up to ~10 min)"
+# Two things were wrong with reading the newest log stream and grepping it:
+#   1. Flow Logs write ONE STREAM PER ENI, so "the most recent stream" is
+#      usually some other interface entirely -- the REJECTs for the probes
+#      above live on the web instance's stream, which may not be newest.
+#   2. `aws ... | grep REJECT | head -10` reports the pipeline's status, and
+#      head closing the pipe kills grep with SIGPIPE; under `pipefail` that
+#      fired the "no REJECT records" branch even when records HAD been found.
+# filter-log-events searches every stream in the group and does the matching
+# server-side, and the result is captured before anything is paged.
+WINDOW_MS="$(( ($(date +%s) - 3600) * 1000 ))"   # the last hour
+REJ="$(aws logs filter-log-events --log-group-name "$LOG_GROUP" \
+        --filter-pattern 'REJECT' --start-time "$WINDOW_MS" --max-items 15 \
+        --query 'events[].message' --output text 2>/dev/null || true)"
+if [ -n "${REJ:-}" ] && [ "$REJ" != "None" ]; then
+    REJ_LINES="$(printf '%s' "$REJ" | tr '\t' '\n')"
+    head -15 <<<"$REJ_LINES" | sed 's/^/  /'
+    echo "  [OK] denied traffic is recorded independently, after the fact"
 else
-    echo "  (no log streams yet -- flow logs take several minutes to first publish)"
+    echo "  (no REJECT records in the last hour yet -- Flow Logs publish with a"
+    echo "   delay of up to ~10 minutes. Re-run this section later, or query it"
+    echo "   directly: aws logs filter-log-events --log-group-name $LOG_GROUP \\"
+    echo "             --filter-pattern REJECT --max-items 15)"
 fi
 
 echo
